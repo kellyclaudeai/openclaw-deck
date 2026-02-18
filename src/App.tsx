@@ -46,7 +46,6 @@ function buildDefaultAgents(count: number): AgentConfig[] {
     icon: String(i + 1),
     accent: AGENT_ACCENTS[i % AGENT_ACCENTS.length],
     context: "",
-    model: "claude-sonnet-4-5",
   }));
 }
 

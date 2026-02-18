@@ -10,6 +10,7 @@ import {
   useAutoScroll,
 } from "../hooks";
 import { useDeckStore } from "../lib/store";
+import { getModelDisplay } from "../lib/model-display";
 import type { AgentStatus, ChatMessage, AgentSession } from "../types";
 import styles from "./AgentColumn.module.css";
 
@@ -191,6 +192,10 @@ export function AgentColumn({ agentId, columnIndex }: { agentId: string; columnI
     session.status === "streaming" ||
     session.status === "thinking" ||
     session.status === "tool_use";
+  const modelDisplay = getModelDisplay({
+    runtimeModel: session.usage?.model,
+    configuredModel: config.model,
+  });
 
   // Determine if agent has completed work ready to review
   const lastMessage = session.messages[session.messages.length - 1];
@@ -225,11 +230,16 @@ export function AgentColumn({ agentId, columnIndex }: { agentId: string; columnI
           </div>
           <div className={styles.headerMeta}>
             {config.context ? <span>{config.context}</span> : null}
-            {config.model && (
+            {modelDisplay && (
               <>
                 {config.context ? <span className={styles.metaDot}>·</span> : null}
-                <span style={{ color: config.accent, opacity: 0.5 }}>
-                  {config.model}
+                <span
+                  style={{
+                    color: config.accent,
+                    opacity: modelDisplay.isFallback ? 0.5 : 0.85,
+                  }}
+                >
+                  {modelDisplay.sourceLabel}: {modelDisplay.model}
                 </span>
               </>
             )}
