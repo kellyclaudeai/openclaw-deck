@@ -217,7 +217,7 @@ export const useDeckStore = create<DeckStore>((set, get) => ({
       const session = state.sessions[agentId];
       if (!session) return state;
 
-      const messages = session.messages.map((msg) => {
+      const messages = (session.messages || []).map((msg) => {
         if (msg.runId === runId && msg.streaming) {
           return { ...msg, text: msg.text + chunk };
         }
@@ -242,7 +242,7 @@ export const useDeckStore = create<DeckStore>((set, get) => ({
       const session = state.sessions[agentId];
       if (!session) return state;
 
-      const messages = session.messages.map((msg) => {
+      const messages = (session.messages || []).map((msg) => {
         if (msg.runId === runId) {
           return { ...msg, streaming: false };
         }
