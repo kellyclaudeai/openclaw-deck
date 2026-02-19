@@ -169,6 +169,7 @@ export class GatewayClient {
    */
   async getSessionHistory(sessionKey: string): Promise<unknown[] | Record<string, unknown> | null> {
     const candidates: Array<{ method: string; params: Record<string, unknown> }> = [
+      { method: "chat.history", params: { sessionKey } },
       { method: "sessions.history", params: { sessionKey } },
       { method: "session.history", params: { sessionKey } },
       { method: "history", params: { sessionKey } },
