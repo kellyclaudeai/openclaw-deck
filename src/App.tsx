@@ -43,12 +43,12 @@ function buildDefaultAgents(count: number): AgentConfig[] {
   return Array.from({ length: count }, (_, i) => {
     // First agent uses "main" (default agent in OpenClaw)
     const agentId = i === 0 ? "main" : `agent-${i + 1}`;
-    const agentName = i === 0 ? "Main" : `Agent ${i + 1}`;
-    
+    const agentName = i === 0 ? "Assistant" : `Agent ${i + 1}`;
+
     return {
       id: agentId,
       name: agentName,
-      icon: String(i + 1),
+      icon: i === 0 ? "A" : String(i + 1),
       accent: AGENT_ACCENTS[i % AGENT_ACCENTS.length],
       context: "",
       model: "claude-sonnet-4-5",

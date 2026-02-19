@@ -96,6 +96,41 @@ export const useDeckStore = create<DeckStore>((set, get) => ({
             sessions[id] = { ...sessions[id], connected: true };
           }
           set({ sessions });
+
+          // Fetch the real agent identity from the gateway
+          client
+            .request("agent.identity.get", { agentId: "main" })
+            .then((result) => {
+              const identity = result as {
+                agentId: string;
+                name: string;
+                avatar: string;
+                emoji?: string;
+              };
+              const name = identity.name?.trim();
+              const icon = (identity.emoji || identity.avatar)?.trim();
+              if (!name && !icon) return; // nothing useful from gateway
+              set((state) => ({
+                config: {
+                  ...state.config,
+                  agents: state.config.agents.map((a) =>
+                    a.id === "main"
+                      ? {
+                          ...a,
+                          ...(name ? { name } : {}),
+                          ...(icon ? { icon } : {}),
+                        }
+                      : a
+                  ),
+                },
+              }));
+            })
+            .catch((err) => {
+              console.warn(
+                "[DeckStore] Failed to fetch agent identity:",
+                err
+              );
+            });
         }
       },
     });
