@@ -85,6 +85,16 @@
   white-space: nowrap;
 }
 
+.headerUsage {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: "JetBrains Mono", monospace;
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .metaDot {
   opacity: 0.4;
 }

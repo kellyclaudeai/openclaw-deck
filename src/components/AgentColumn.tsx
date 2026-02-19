@@ -265,16 +265,18 @@ export function AgentColumn({ agentId, columnIndex }: { agentId: string; columnI
                 </span>
               </>
             )}
-            {totalTokens > 0 && (
-              <>
-                <span className={styles.metaDot}>·</span>
-                <span style={{ opacity: contextPercent > 80 ? 1 : 0.6, color: contextPercent > 90 ? '#ef4444' : contextPercent > 80 ? '#f59e0b' : 'inherit' }}>
-                  {totalTokens.toLocaleString()} tokens ({contextPercent.toFixed(1)}%)
-                </span>
-              </>
-            )}
             <FailoverBadge session={session} />
           </div>
+          {totalTokens > 0 && (
+            <div className={styles.headerUsage}>
+              <span style={{ 
+                opacity: contextPercent > 80 ? 1 : 0.6, 
+                color: contextPercent > 90 ? '#ef4444' : contextPercent > 80 ? '#f59e0b' : 'inherit' 
+              }}>
+                {totalTokens.toLocaleString()} tokens · {contextPercent.toFixed(1)}% of context
+              </span>
+            </div>
+          )}
         </div>
         <div className={styles.headerActions}>
           <button className={styles.headerBtn} title="Settings">
