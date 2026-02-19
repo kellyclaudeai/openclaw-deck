@@ -41,3 +41,9 @@ Thumbs.db
 
 # ClawHub
 .clawhub
+
+# Local agent config
+.agents
+.tldr
+AGENTS.md
+CLAUDE.md
