@@ -81,6 +81,12 @@ function makeId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function agentIdFromSessionKey(sessionKey?: string): string | null {
+  if (!sessionKey) return null;
+  const parts = sessionKey.split(":");
+  return parts[2] ?? parts[1] ?? null;
+}
+
 function sessionKeyForAgent(agentId: string): string {
   return `agent:main:${agentId}`;
 }
@@ -500,6 +506,11 @@ export const useDeckStore = create<DeckStore>((set, get) => ({
             return { sessions };
           });
         }
+
+        // Presence snapshots are a good trigger to re-sync runtime model/usage.
+        for (const id of Object.keys(get().sessions)) {
+          void get().refreshUsageForAgent(id);
+        }
         break;
       }
 
@@ -564,8 +575,25 @@ export const useDeckStore = create<DeckStore>((set, get) => ({
         break;
       }
 
-      default:
+      default: {
+        // Keep model badge in sync when gateway emits session-related events
+        // that may vary by version/plugins.
+        if (event.event.startsWith("sessions.")) {
+          const fromSessionKey = agentIdFromSessionKey(
+            payload.sessionKey as string | undefined
+          );
+          if (fromSessionKey && get().sessions[fromSessionKey]) {
+            void get().refreshUsageForAgent(fromSessionKey);
+          } else {
+            for (const id of Object.keys(get().sessions)) {
+              void get().refreshUsageForAgent(id);
+            }
+          }
+          break;
+        }
+
         console.log("[DeckStore] Unhandled event:", event.event, payload);
+      }
     }
   },
 
