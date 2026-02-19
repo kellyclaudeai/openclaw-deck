@@ -16,12 +16,38 @@ body,
   overflow: hidden;
 }
 
+:root {
+  /* Default theme (Midnight) */
+  --theme-bg: #12151d;
+  --theme-bgSecondary: #1a1e2e;
+  --theme-bgTertiary: #0f1119;
+  --theme-text: rgba(255, 255, 255, 0.9);
+  --theme-textSecondary: rgba(255, 255, 255, 0.7);
+  --theme-textMuted: rgba(255, 255, 255, 0.5);
+  --theme-border: rgba(255, 255, 255, 0.1);
+  --theme-borderLight: rgba(255, 255, 255, 0.07);
+  --theme-scrollbar: rgba(255, 255, 255, 0.16);
+  --theme-scrollbarTrack: rgba(255, 255, 255, 0.05);
+  --theme-columnBg: rgba(255, 255, 255, 0.06);
+  --theme-columnBgAlt: rgba(255, 255, 255, 0.08);
+  --theme-columnHover: rgba(255, 255, 255, 0.01);
+  --theme-headerBg: rgba(255, 255, 255, 0.07);
+  --theme-inputBg: rgba(255, 255, 255, 0.1);
+  --theme-inputBorder: rgba(255, 255, 255, 0.14);
+  --theme-inputFocus: rgba(255, 255, 255, 0.24);
+  --theme-codeBg: rgba(255, 255, 255, 0.08);
+  --theme-codeBlockBg: rgba(0, 0, 0, 0.28);
+  --theme-quoteBorder: rgba(255, 255, 255, 0.25);
+  --theme-link: #7dd3fc;
+}
+
 body {
   font-family: "DM Sans", sans-serif;
-  background: #12151d;
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--theme-bg);
+  color: var(--theme-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .deck-root {
@@ -44,10 +70,10 @@ body {
 }
 
 .deck-columns::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--theme-scrollbarTrack);
 }
 
 .deck-columns::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--theme-scrollbar);
   border-radius: 3px;
 }

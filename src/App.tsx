@@ -6,6 +6,7 @@ import { TopBar } from "./components/TopBar";
 import { StatusBar } from "./components/StatusBar";
 import { AddAgentModal } from "./components/AddAgentModal";
 import type { AgentConfig } from "./types";
+import { themes, applyTheme } from "./themes";
 import "./App.css";
 
 /**
@@ -79,8 +80,17 @@ export default function App() {
   );
   const columnOrder = useDeckStore((s) => s.columnOrder);
   const createAgentOnGateway = useDeckStore((s) => s.createAgentOnGateway);
+  const theme = useDeckStore((s) => s.theme);
 
   const { gatewayUrl, token } = getGatewayConfig();
+
+  // Apply theme on mount and when it changes
+  useEffect(() => {
+    const selectedTheme = themes[theme];
+    if (selectedTheme) {
+      applyTheme(selectedTheme);
+    }
+  }, [theme]);
 
   useDeckInit({
     gatewayUrl,

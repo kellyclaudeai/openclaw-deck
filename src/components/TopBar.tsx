@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDeckStats } from "../hooks";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 import styles from "./TopBar.module.css";
 
 const TABS = ["All Agents", "Active", "Queued", "Completed"] as const;
@@ -84,6 +85,8 @@ export function TopBar({
           })}
         </div>
       </div>
+
+      <ThemeSwitcher />
 
       <button className={styles.addBtn} onClick={onAddAgent}>
         <span>+</span> New Agent

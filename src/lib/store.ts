@@ -10,6 +10,7 @@ import type {
   SessionUsage,
 } from "../types";
 import { GatewayClient } from "./gateway-client";
+import { themes, applyTheme } from "../themes";
 
 // ─── Default Config ───
 
@@ -27,6 +28,7 @@ interface DeckStore {
   gatewayConnected: boolean;
   columnOrder: string[];
   client: GatewayClient | null;
+  theme: string;
 
   // Actions
   initialize: (config: Partial<DeckConfig>) => void;
@@ -41,6 +43,7 @@ interface DeckStore {
   createAgentOnGateway: (agent: AgentConfig) => Promise<void>;
   deleteAgentOnGateway: (agentId: string) => Promise<void>;
   disconnect: () => void;
+  setTheme: (themeId: string) => void;
 }
 
 // ─── Helpers ───
@@ -70,6 +73,7 @@ export const useDeckStore = create<DeckStore>()(
   gatewayConnected: false,
   columnOrder: [],
   client: null,
+  theme: 'midnight',
 
   initialize: (partialConfig) => {
     const config = { ...DEFAULT_CONFIG, ...partialConfig };
@@ -442,6 +446,14 @@ export const useDeckStore = create<DeckStore>()(
     get().client?.disconnect();
     set({ gatewayConnected: false, client: null });
   },
+
+  setTheme: (themeId: string) => {
+    set({ theme: themeId });
+    const theme = themes[themeId];
+    if (theme) {
+      applyTheme(theme);
+    }
+  },
 }),
     {
       name: 'openclaw-deck-storage',
@@ -449,6 +461,7 @@ export const useDeckStore = create<DeckStore>()(
         config: state.config,
         sessions: state.sessions,
         columnOrder: state.columnOrder,
+        theme: state.theme,
         // Exclude: client, gatewayConnected (runtime state)
       }),
     }

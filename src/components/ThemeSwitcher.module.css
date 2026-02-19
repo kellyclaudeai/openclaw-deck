@@ -1,0 +1,40 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label {
+  font-size: 12px;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--theme-textMuted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.select {
+  background: var(--theme-inputBg);
+  border: 1px solid var(--theme-inputBorder);
+  border-radius: 6px;
+  color: var(--theme-text);
+  font-size: 13px;
+  font-family: "DM Sans", sans-serif;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.select:hover {
+  border-color: var(--theme-inputFocus);
+}
+
+.select:focus {
+  border-color: var(--theme-inputFocus);
+  box-shadow: 0 0 0 2px var(--theme-inputFocus);
+}
+
+.select option {
+  background: var(--theme-bgSecondary);
+  color: var(--theme-text);
+}
