@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import type {
   AgentConfig,
   AgentSession,
@@ -65,9 +64,7 @@ function makeId(): string {
 
 // ─── Store ───
 
-export const useDeckStore = create<DeckStore>()(
-  persist(
-    (set, get) => ({
+export const useDeckStore = create<DeckStore>((set, get) => ({
   config: DEFAULT_CONFIG,
   sessions: {},
   gatewayConnected: false,
@@ -77,29 +74,12 @@ export const useDeckStore = create<DeckStore>()(
 
   initialize: (partialConfig) => {
     const config = { ...DEFAULT_CONFIG, ...partialConfig };
-    const existingSessions = get().sessions;
-    const existingColumnOrder = get().columnOrder;
-    
-    // Merge persisted sessions with new agent configs
-    const sessions: Record<string, AgentSession> = { ...existingSessions };
-    const columnOrder: string[] = [...existingColumnOrder];
+    const sessions: Record<string, AgentSession> = {};
+    const columnOrder: string[] = [];
 
-    // Add sessions for new agents not in persisted state
     for (const agent of config.agents) {
-      if (!sessions[agent.id]) {
-        sessions[agent.id] = createSession(agent.id);
-      }
-      if (!columnOrder.includes(agent.id)) {
-        columnOrder.push(agent.id);
-      }
-    }
-
-    // Remove sessions for agents no longer in config
-    const agentIds = new Set(config.agents.map(a => a.id));
-    for (const id of Object.keys(sessions)) {
-      if (!agentIds.has(id)) {
-        delete sessions[id];
-      }
+      sessions[agent.id] = createSession(agent.id);
+      columnOrder.push(agent.id);
     }
 
     // Create the gateway client
@@ -454,16 +434,4 @@ export const useDeckStore = create<DeckStore>()(
       applyTheme(theme);
     }
   },
-}),
-    {
-      name: 'openclaw-deck-storage',
-      partialize: (state) => ({
-        config: state.config,
-        sessions: state.sessions,
-        columnOrder: state.columnOrder,
-        theme: state.theme,
-        // Exclude: client, gatewayConnected (runtime state)
-      }),
-    }
-  )
-);
+}));
