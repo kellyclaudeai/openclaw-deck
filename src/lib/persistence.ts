@@ -190,6 +190,10 @@ function normalizeHistoryItem(item: unknown, index: number): ChatMessage | null 
   if (!role) return null;
 
   const text = extractText(item.text ?? item.content ?? item.message ?? "");
+  if (role !== "compaction" && text.trim().length === 0) {
+    return null;
+  }
+
   const timestamp = extractTimestamp(item.timestamp ?? item.createdAt ?? item.time, index);
   const id = toOptionalString(item.id ?? item.messageId) ?? `hist-${role}-${timestamp}-${index}`;
 

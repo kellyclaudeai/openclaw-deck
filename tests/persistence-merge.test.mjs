@@ -114,6 +114,11 @@ test('normalizeGatewayHistoryMessages handles common payload variants', async ()
         timestamp: 101,
         runId: 'run-2',
       },
+      {
+        role: 'assistant',
+        content: [{ type: 'thinking', thinking: 'internal' }],
+        timestamp: 102,
+      },
     ],
   };
 
