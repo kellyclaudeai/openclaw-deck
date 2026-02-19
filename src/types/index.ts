@@ -124,4 +124,6 @@ export interface DeckState {
   gatewayConnected: boolean;
   /** Column ordering (agent IDs) */
   columnOrder: string[];
+  /** Per-column draft message text */
+  drafts: Record<string, string>;
 }
