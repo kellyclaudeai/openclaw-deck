@@ -14,6 +14,20 @@ A multi-column chat interface for [OpenClaw](https://openclaw.ai) agents. Chat w
 - **Real-time WebSocket** — Live connection to OpenClaw Gateway
 - **Clean UI** — Compact, readable design optimized for productivity
 
+## Screenshots
+
+![Theme Example 1](images/theme-1.png)
+*OpenClaw Deck with dark theme - Multi-column chat interface*
+
+![Theme Example 2](images/theme-2.png)
+*Different theme variant showing markdown rendering*
+
+![Theme Example 3](images/theme-3.png)
+*Another theme with active conversations*
+
+![Theme Example 4](images/theme-4.png)
+*Additional theme showcasing the interface*
+
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
