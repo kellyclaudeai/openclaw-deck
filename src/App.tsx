@@ -7,54 +7,8 @@ import { StatusBar } from "./components/StatusBar";
 import { AddAgentModal } from "./components/AddAgentModal";
 import type { AgentConfig } from "./types";
 import { themes, applyTheme } from "./themes";
+import { fetchGatewayConfig, buildDefaultAgents } from "./lib/gateway-config";
 import "./App.css";
-
-/**
- * Agent column configuration.
- *
- * You're running default single-agent mode, so there's one agent: "main".
- * The Gateway routes all messages to the default workspace at:
- *   /Users/austenallred/.openclaw/workspace
- *
- * To add more columns later, set up multi-agent in openclaw.json:
- *   { "agents": { "list": [
- *     { "id": "research", "workspace": "~/.openclaw/workspace-research" },
- *     { "id": "codegen",  "workspace": "~/.openclaw/workspace-codegen" },
- *   ]}}
- *
- * Then add matching entries here.
- */
-const AGENT_ACCENTS = [
-  "#22d3ee",
-  "#a78bfa",
-  "#34d399",
-  "#f59e0b",
-  "#f472b6",
-  "#60a5fa",
-  "#facc15",
-  "#fb7185",
-  "#4ade80",
-  "#c084fc",
-  "#f97316",
-  "#2dd4bf",
-];
-
-function buildDefaultAgents(count: number): AgentConfig[] {
-  return Array.from({ length: count }, (_, i) => {
-    // First agent uses "main" (default agent in OpenClaw)
-    const agentId = i === 0 ? "main" : `agent-${i + 1}`;
-    const agentName = i === 0 ? "Main" : `Agent ${i + 1}`;
-    
-    return {
-      id: agentId,
-      name: agentName,
-      icon: String(i + 1),
-      accent: AGENT_ACCENTS[i % AGENT_ACCENTS.length],
-      context: "",
-      model: "claude-sonnet-4-5",
-    };
-  });
-}
 
 function getGatewayConfig() {
   const params = new URLSearchParams(window.location.search);
@@ -81,14 +35,39 @@ function getGatewayConfig() {
 export default function App() {
   const [activeTab, setActiveTab] = useState("All Agents");
   const [showAddModal, setShowAddModal] = useState(false);
-  const [initialAgents] = useState<AgentConfig[]>(() =>
-    buildDefaultAgents(7)
-  );
+  const [initialAgents, setInitialAgents] = useState<AgentConfig[]>([]);
+  const [availableModels, setAvailableModels] = useState<Array<{ id: string; name: string }>>([]);
+  const [defaultModel, setDefaultModel] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
   const columnOrder = useDeckStore((s) => s.columnOrder);
   const createAgentOnGateway = useDeckStore((s) => s.createAgentOnGateway);
   const theme = useDeckStore((s) => s.theme);
 
   const { gatewayUrl, token } = getGatewayConfig();
+
+  // Fetch gateway config on mount
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadConfig() {
+      const config = await fetchGatewayConfig(gatewayUrl, token);
+      if (!mounted) return;
+
+      setDefaultModel(config.defaultModel);
+      setAvailableModels(config.availableModels);
+      // Create agents with fetched config
+      const agents = buildDefaultAgents(7, config.defaultModel);
+      setInitialAgents(agents);
+      setIsLoading(false);
+    }
+
+    // Load config first, then create agents (no fallback needed since /config is local)
+    loadConfig();
+
+    return () => {
+      mounted = false;
+    };
+  }, [gatewayUrl, token]);
 
   // Apply theme on mount and when it changes
   useEffect(() => {
@@ -125,6 +104,16 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  if (isLoading) {
+    return (
+      <div className="deck-root">
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+          Loading gateway configuration...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="deck-root">
       <TopBar
@@ -145,6 +134,8 @@ export default function App() {
         <AddAgentModal
           onClose={() => setShowAddModal(false)}
           onCreate={createAgentOnGateway}
+          availableModels={availableModels}
+          defaultModel={defaultModel}
         />
       )}
     </div>

@@ -4,22 +4,31 @@ import type { AgentConfig, DeckConfig } from "../types";
 
 /**
  * Initialize the deck with config. Call once at app root.
+ * Now properly handles dynamic agent updates including model changes.
  */
 export function useDeckInit(config: Partial<DeckConfig>) {
   const initialize = useDeckStore((s) => s.initialize);
   const disconnect = useDeckStore((s) => s.disconnect);
-  const initialized = useRef(false);
+  const prevAgentsRef = useRef<string>("");
+
+  // Get a stable key for the agents array to detect changes (including model changes)
+  const agentsKey = config.agents?.map(a => `${a.id}:${a.model}`).join(",") || "";
 
   useEffect(() => {
-    if (!initialized.current) {
-      initialized.current = true;
-      initialize(config);
+    // Only re-initialize if agents have actually changed (including model)
+    if (prevAgentsRef.current !== agentsKey) {
+      prevAgentsRef.current = agentsKey;
+      
+      // If we have agents, initialize (or re-initialize) the store
+      if (config.agents && config.agents.length > 0) {
+        initialize(config);
+      }
     }
+
     return () => {
-      initialized.current = false;
       disconnect();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [agentsKey, config.gatewayUrl, config.token]); // Re-run when agents or connection changes
 }
 
 /**

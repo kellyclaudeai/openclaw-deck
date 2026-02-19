@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent } from "react";
 import type { AgentConfig } from "../types";
 import styles from "./AddAgentModal.module.css";
+import { FALLBACK_MODELS } from "../lib/gateway-config";
 
 const ACCENTS = [
   "#22d3ee", // cyan
@@ -13,23 +14,27 @@ const ACCENTS = [
   "#ef4444", // red
 ];
 
-const MODELS = [
-  "claude-sonnet-4-5",
-  "claude-opus-4-6",
-];
+interface AddAgentModalProps {
+  onClose: () => void;
+  onCreate: (agent: AgentConfig) => Promise<void>;
+  availableModels?: Array<{ id: string; name: string }>;
+  defaultModel?: string;
+}
 
 export function AddAgentModal({
   onClose,
   onCreate,
-}: {
-  onClose: () => void;
-  onCreate: (agent: AgentConfig) => Promise<void>;
-}) {
+  availableModels,
+  defaultModel,
+}: AddAgentModalProps) {
+  const models = (availableModels && availableModels.length > 0) ? availableModels : FALLBACK_MODELS;
+  const initialModel = defaultModel || (models[0]?.id ?? FALLBACK_MODELS[0].id);
+
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("");
   const [accent, setAccent] = useState(ACCENTS[1]);
   const [context, setContext] = useState("");
-  const [model, setModel] = useState(MODELS[0]);
+  const [model, setModel] = useState(initialModel);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -131,8 +136,8 @@ export function AddAgentModal({
             value={model}
             onChange={(e) => setModel(e.target.value)}
           >
-            {MODELS.map((m) => (
-              <option key={m} value={m}>{m}</option>
+            {models.map((m) => (
+              <option key={m.id} value={m.id}>{m.name}</option>
             ))}
           </select>
         </div>
