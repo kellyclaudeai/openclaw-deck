@@ -126,7 +126,7 @@ openclaw gateway start
 Your gateway token is required for authentication:
 
 ```bash
-openclaw config get gateway.token
+openclaw config get gateway.auth.token
 ```
 
 **Example output:**
