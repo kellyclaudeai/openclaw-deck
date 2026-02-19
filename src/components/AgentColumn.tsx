@@ -159,7 +159,8 @@ export function AgentColumn({ agentId, columnIndex }: { agentId: string; columnI
   const config = useAgentConfig(agentId);
   const send = useSendMessage(agentId);
   const deleteAgentOnGateway = useDeckStore((s) => s.deleteAgentOnGateway);
-  const [input, setInput] = useState("");
+  const input = useDeckStore((s) => s.drafts[agentId] ?? "");
+  const setDraft = useDeckStore((s) => s.setDraft);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const scrollRef = useAutoScroll(session?.messages);
 
@@ -168,7 +169,7 @@ export function AgentColumn({ agentId, columnIndex }: { agentId: string; columnI
   const handleSend = () => {
     const text = input.trim();
     if (!text) return;
-    setInput("");
+    setDraft(agentId, "");
     send(text);
   };
 
@@ -294,7 +295,7 @@ export function AgentColumn({ agentId, columnIndex }: { agentId: string; columnI
         <div className={styles.inputWrapper}>
           <textarea
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => setDraft(agentId, e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={`Message ${config.name}...`}
             className={styles.input}

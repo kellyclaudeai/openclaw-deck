@@ -164,6 +164,36 @@ export class GatewayClient {
   }
 
   /**
+   * Fetch canonical history for a session key.
+   * Falls back across known method names and returns null when unsupported.
+   */
+  async getSessionHistory(sessionKey: string): Promise<unknown[] | Record<string, unknown> | null> {
+    const candidates: Array<{ method: string; params: Record<string, unknown> }> = [
+      { method: "sessions.history", params: { sessionKey } },
+      { method: "session.history", params: { sessionKey } },
+      { method: "history", params: { sessionKey } },
+    ];
+
+    for (const candidate of candidates) {
+      try {
+        const result = await this.request(candidate.method, candidate.params);
+        if (Array.isArray(result)) return result;
+        if (result && typeof result === "object") {
+          return result as Record<string, unknown>;
+        }
+        return null;
+      } catch (err) {
+        if (this.isMissingHistoryMethodError(err)) {
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Send a message to a channel via the gateway.
    */
   async sendMessage(
@@ -186,6 +216,11 @@ export class GatewayClient {
   /** Get current gateway health */
   async health(): Promise<unknown> {
     return this.request("health");
+  }
+
+  /** List sessions from gateway */
+  async listSessions(params?: Record<string, unknown>): Promise<unknown> {
+    return this.request("sessions.list", params ?? {});
   }
 
   /** Create an agent on the gateway */
@@ -505,5 +540,16 @@ export class GatewayClient {
     }
     const base64 = btoa(binary);
     return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  }
+
+  private isMissingHistoryMethodError(err: unknown): boolean {
+    if (!(err instanceof Error)) return false;
+    const message = err.message.toLowerCase();
+    return (
+      message.includes("unknown method") ||
+      message.includes("not found") ||
+      message.includes("unsupported method") ||
+      message.includes("not implemented")
+    );
   }
 }
