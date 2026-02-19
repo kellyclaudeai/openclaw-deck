@@ -151,6 +151,33 @@ function FailoverBadge({ session }: { session: AgentSession }) {
   );
 }
 
+// ─── Context Window Helper ───
+
+const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
+  "gpt-4": 128000,
+  "gpt-4o": 128000,
+  "gpt-4-turbo": 128000,
+  "claude-3-5-sonnet": 200000,
+  "claude-3-opus": 200000,
+  "claude-sonnet-4": 200000,
+  "gemini-2.0-flash": 1000000,
+  "gemini-2.5-flash": 1000000,
+  "gemini-2.5-pro": 2000000,
+};
+
+function getContextWindow(model?: string): number {
+  if (!model) return 200000; // default
+  
+  // Match partial model names
+  for (const [key, size] of Object.entries(MODEL_CONTEXT_WINDOWS)) {
+    if (model.toLowerCase().includes(key.toLowerCase())) {
+      return size;
+    }
+  }
+  
+  return 200000; // default fallback
+}
+
 // ─── Main Column ───
 
 export function AgentColumn({ agentId, columnIndex }: { agentId: string; columnIndex: number }) {
@@ -163,6 +190,11 @@ export function AgentColumn({ agentId, columnIndex }: { agentId: string; columnI
   const scrollRef = useAutoScroll(session?.messages);
 
   if (!config || !session) return null;
+
+  // Calculate context usage
+  const contextWindow = getContextWindow(session.usage?.model || config.model);
+  const totalTokens = session.usage?.totalTokens || session.tokenCount || 0;
+  const contextPercent = contextWindow > 0 ? (totalTokens / contextWindow) * 100 : 0;
 
   const handleSend = () => {
     const text = input.trim();
@@ -230,6 +262,14 @@ export function AgentColumn({ agentId, columnIndex }: { agentId: string; columnI
                 {config.context ? <span className={styles.metaDot}>·</span> : null}
                 <span style={{ color: config.accent, opacity: 0.5 }}>
                   {config.model}
+                </span>
+              </>
+            )}
+            {totalTokens > 0 && (
+              <>
+                <span className={styles.metaDot}>·</span>
+                <span style={{ opacity: contextPercent > 80 ? 1 : 0.6, color: contextPercent > 90 ? '#ef4444' : contextPercent > 80 ? '#f59e0b' : 'inherit' }}>
+                  {totalTokens.toLocaleString()} tokens ({contextPercent.toFixed(1)}%)
                 </span>
               </>
             )}
