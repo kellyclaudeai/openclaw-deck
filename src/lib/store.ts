@@ -25,6 +25,8 @@ interface DeckStore {
   config: DeckConfig;
   sessions: Record<string, AgentSession>;
   gatewayConnected: boolean;
+  pairingRequired: boolean;
+  pairingMessage: string;
   columnOrder: string[];
   client: GatewayClient | null;
   theme: string;
@@ -68,6 +70,8 @@ export const useDeckStore = create<DeckStore>((set, get) => ({
   config: DEFAULT_CONFIG,
   sessions: {},
   gatewayConnected: false,
+  pairingRequired: false,
+  pairingMessage: "",
   columnOrder: [],
   client: null,
   theme: 'midnight',
@@ -90,6 +94,8 @@ export const useDeckStore = create<DeckStore>((set, get) => ({
       onConnection: (connected) => {
         set({ gatewayConnected: connected });
         if (connected) {
+          // Clear pairing state on successful connection
+          set({ pairingRequired: false, pairingMessage: "" });
           // Mark all agent sessions as connected
           const sessions = { ...get().sessions };
           for (const id of Object.keys(sessions)) {
@@ -97,6 +103,9 @@ export const useDeckStore = create<DeckStore>((set, get) => ({
           }
           set({ sessions });
         }
+      },
+      onPairingRequired: (info) => {
+        set({ pairingRequired: true, pairingMessage: info.message });
       },
     });
 
