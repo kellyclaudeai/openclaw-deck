@@ -30,6 +30,8 @@ interface PendingRequest {
   timeout: ReturnType<typeof setTimeout>;
 }
 
+type PairingHandler = (info: { requestId?: string; message: string }) => void;
+
 interface GatewayClientOptions {
   url: string;
   token?: string;
@@ -37,6 +39,8 @@ interface GatewayClientOptions {
   onEvent?: EventHandler;
   /** Called when connection state changes */
   onConnection?: ConnectionHandler;
+  /** Called when device pairing is required (user must approve in Control UI) */
+  onPairingRequired?: PairingHandler;
   /** Max reconnection attempts (default: Infinity) */
   maxReconnectAttempts?: number;
   /** Base reconnect delay in ms (default: 1000) */
@@ -51,7 +55,13 @@ interface DeviceIdentityRecord {
   privateKeyJwk: JsonWebKey;
 }
 
-const OPERATOR_SCOPES = ["operator.read", "operator.write"];
+const OPERATOR_SCOPES = [
+  "operator.admin",
+  "operator.read",
+  "operator.write",
+  "operator.approvals",
+  "operator.pairing",
+];
 const DEVICE_IDENTITY_STORAGE_KEY = "openclaw.deck.deviceIdentity.v1";
 
 export class GatewayClient {
@@ -70,6 +80,7 @@ export class GatewayClient {
       token: opts.token ?? "",
       onEvent: opts.onEvent ?? (() => {}),
       onConnection: opts.onConnection ?? (() => {}),
+      onPairingRequired: opts.onPairingRequired ?? (() => {}),
       maxReconnectAttempts: opts.maxReconnectAttempts ?? Infinity,
       reconnectBaseDelay: opts.reconnectBaseDelay ?? 1000,
       requestTimeout: opts.requestTimeout ?? 30_000,
@@ -123,9 +134,11 @@ export class GatewayClient {
           if (res.ok) {
             resolve(res.payload);
           } else {
-            reject(
-              new Error(res.error?.message ?? `Request ${method} failed`)
+            const err = Object.assign(
+              new Error(res.error?.message ?? `Request ${method} failed`),
+              { code: res.error?.code, details: (res.error as Record<string, unknown>)?.details }
             );
+            reject(err);
           }
         },
         reject: (err) => {
@@ -253,18 +266,45 @@ export class GatewayClient {
           ...(device ? { device } : {}),
         })) as { auth?: { deviceToken?: string } };
 
-        const issuedDeviceToken = hello?.auth?.deviceToken;
+        const helloPayload = hello as Record<string, unknown> | undefined;
+        const serverInfo = helloPayload?.server as Record<string, unknown> | undefined;
+        const authInfo = helloPayload?.auth as Record<string, unknown> | undefined;
+
+        console.log("[GatewayClient] Connected to gateway");
+        console.log("[GatewayClient] Server version:", serverInfo?.version ?? "unknown");
+        console.log("[GatewayClient] Server host:", serverInfo?.host ?? "unknown");
+        console.log("[GatewayClient] Auth scopes:", authInfo?.scopes ?? "none");
+        console.log("[GatewayClient] Auth role:", authInfo?.role ?? "unknown");
+
+        const issuedDeviceToken = authInfo?.deviceToken as string | undefined;
         if (issuedDeviceToken) {
           this.storeDeviceToken(issuedDeviceToken);
+          console.log("[GatewayClient] Device token received and stored");
+        } else {
+          console.warn("[GatewayClient] No device token in response (device identity may not have been accepted)");
         }
 
         this._connected = true;
         this.reconnectAttempts = 0;
         this.options.onConnection(true);
-        console.log("[GatewayClient] Connected to gateway");
-      } catch (err) {
-        console.error("[GatewayClient] Handshake failed:", err);
-        this.ws?.close(4001, "handshake failed");
+      } catch (err: unknown) {
+        const errObj = err as { code?: string; message?: string; details?: { requestId?: string } };
+        const code = errObj?.code ?? "";
+        const msg = errObj?.message ?? String(err);
+        const isPairing = code === "NOT_PAIRED" || msg.includes("pairing");
+
+        if (isPairing) {
+          console.warn("[GatewayClient] Device not paired — approve in OpenClaw Control UI, retrying...");
+          this.options.onPairingRequired({
+            requestId: errObj?.details?.requestId,
+            message: "Device pairing required. Approve this device in the OpenClaw Control UI.",
+          });
+          this.ws?.close(4002, "pairing required");
+          // scheduleReconnect is called from onclose handler
+        } else {
+          console.error("[GatewayClient] Handshake failed:", err);
+          this.ws?.close(4001, "handshake failed");
+        }
       }
     };
 

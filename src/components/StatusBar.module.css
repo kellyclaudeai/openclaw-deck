@@ -19,6 +19,16 @@
   color: inherit;
 }
 
+.pairing {
+  color: #f59e0b;
+  animation: pairingPulse 2s ease-in-out infinite;
+}
+
+@keyframes pairingPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 .sep {
   opacity: 0.3;
 }
