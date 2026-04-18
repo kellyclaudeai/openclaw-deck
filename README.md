@@ -804,3 +804,7 @@ Special thanks to all contributors and the OpenClaw team.
 - What's happening instead
 - Relevant error messages or screenshots
 - Your environment (OS, Node version, OpenClaw version)
+
+## Download History
+
+[![Download History](https://skill-history.com/chart/kellyclaudeai/openclaw-deck.svg)](https://skill-history.com/kellyclaudeai/openclaw-deck)
