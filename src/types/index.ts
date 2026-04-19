@@ -4,6 +4,8 @@
 export type ServerFrame =
   | { type: "connected" }
   | { type: "status"; agentId: string; runId: string; status: AgentStatus }
+  | { type: "chunk"; agentId: string; runId: string; text: string }
+  | { type: "tool_use"; agentId: string; runId: string; toolName: string }
   | { type: "result"; agentId: string; runId: string; text: string; stopReason?: string }
   | { type: "event"; agentId: string; runId: string; event: Record<string, unknown> }
   | { type: "error"; agentId: string; runId?: string; message: string }

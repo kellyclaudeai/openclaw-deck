@@ -275,16 +275,63 @@ export const useDeckStore = create<DeckStore>((set, get) => ({
         break;
       }
 
-      case "event": {
-        const { agentId, runId, event } = frame;
+      case "chunk": {
+        const { agentId, runId, text } = frame;
+        set((state) => {
+          const session = state.sessions[agentId];
+          if (!session) return state;
 
-        // Handle task_progress events to show tool use, etc.
-        if (event.type === "system") {
-          const subtype = event.subtype as string | undefined;
-          if (subtype === "task_progress") {
-            get().setAgentStatus(agentId, "streaming");
-          }
-        }
+          const messages = session.messages.map((msg) => {
+            if (msg.runId === runId && msg.role === "assistant" && msg.streaming) {
+              return { ...msg, text };
+            }
+            return msg;
+          });
+
+          return {
+            sessions: {
+              ...state.sessions,
+              [agentId]: {
+                ...session,
+                messages,
+                tokenCount: session.tokenCount + text.length,
+              },
+            },
+          };
+        });
+        break;
+      }
+
+      case "tool_use": {
+        const { agentId, runId, toolName } = frame;
+        set((state) => {
+          const session = state.sessions[agentId];
+          if (!session) return state;
+
+          const toolMsg: ChatMessage = {
+            id: makeId(),
+            role: "system",
+            text: "",
+            timestamp: Date.now(),
+            toolUse: { name: toolName, status: "running" },
+          };
+
+          return {
+            sessions: {
+              ...state.sessions,
+              [agentId]: {
+                ...session,
+                messages: [...session.messages, toolMsg],
+                status: "tool_use",
+              },
+            },
+          };
+        });
+        break;
+      }
+
+      case "event": {
+        // Forward other SDK events (task_progress, etc.)
         break;
       }
 

@@ -70,8 +70,7 @@ wss.on("connection", (ws) => {
             "WebSearch",
             "WebFetch",
           ],
-          permissionMode: "bypassPermissions",
-          allowDangerouslySkipPermissions: true,
+          permissionMode: "acceptEdits",
           cwd: CWD,
           maxTurns: 50,
         };
@@ -93,8 +92,33 @@ wss.on("connection", (ws) => {
             });
           }
 
+          // Assistant message with streaming content
+          if (m.type === "assistant") {
+            const msg = m.message as Record<string, unknown> | undefined;
+            const content = msg?.content as Array<Record<string, unknown>> | undefined;
+            if (content) {
+              for (const block of content) {
+                if (block.type === "text" && block.text) {
+                  send(ws, {
+                    type: "chunk",
+                    agentId,
+                    runId,
+                    text: block.text as string,
+                  });
+                } else if (block.type === "tool_use") {
+                  send(ws, {
+                    type: "tool_use",
+                    agentId,
+                    runId,
+                    toolName: block.name as string,
+                  });
+                }
+              }
+            }
+            send(ws, { type: "status", agentId, runId, status: "streaming" });
+          }
           // Final result
-          if ("result" in m) {
+          else if ("result" in m) {
             send(ws, {
               type: "result",
               agentId,
