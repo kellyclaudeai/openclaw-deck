@@ -1,32 +1,19 @@
-// ─── OpenClaw Gateway WebSocket Protocol Types ───
+// ─── MultiClaude WebSocket Protocol Types ───
 
-/** Outbound request frame */
-export interface GatewayRequest {
-  type: "req";
-  id: string;
-  method: string;
-  params?: Record<string, unknown>;
-}
+/** Server → Client frames */
+export type ServerFrame =
+  | { type: "connected" }
+  | { type: "status"; agentId: string; runId: string; status: AgentStatus }
+  | { type: "chunk"; agentId: string; runId: string; text: string }
+  | { type: "tool_use"; agentId: string; runId: string; toolName: string }
+  | { type: "result"; agentId: string; runId: string; text: string; stopReason?: string }
+  | { type: "event"; agentId: string; runId: string; event: Record<string, unknown> }
+  | { type: "error"; agentId: string; runId?: string; message: string }
+  | { type: "session_init"; agentId: string; sessionId: string };
 
-/** Inbound response frame */
-export interface GatewayResponse {
-  type: "res";
-  id: string;
-  ok: boolean;
-  payload?: unknown;
-  error?: { code: string; message: string };
-}
-
-/** Inbound event frame (streaming, presence, ticks) */
-export interface GatewayEvent {
-  type: "event";
-  event: string;
-  payload: unknown;
-  seq?: number;
-  stateVersion?: number;
-}
-
-export type GatewayFrame = GatewayRequest | GatewayResponse | GatewayEvent;
+/** Client → Server frames */
+export type ClientFrame =
+  | { type: "send"; agentId: string; text: string };
 
 // ─── Agent Types ───
 
@@ -43,50 +30,25 @@ export interface AgentConfig {
   name: string;
   icon: string;
   accent: string;
-  /** Path to agent workspace (maps to OpenClaw agent config) */
-  workspace?: string;
+  /** System prompt / context for the agent */
+  context: string;
   /** Model override for this agent */
   model?: string;
-  /** Short description of agent's role */
-  context: string;
-  /** Agent envelope runtime shell (#1835) */
-  shell?: string;
 }
 
 export interface ChatMessage {
   id: string;
-  role: "user" | "assistant" | "system" | "compaction";
+  role: "user" | "assistant" | "system";
   text: string;
   timestamp: number;
   /** If assistant is still streaming this message */
   streaming?: boolean;
-  /** Agent thinking / status indicator */
-  thinking?: boolean;
+  /** Run ID for tracking responses */
+  runId?: string;
   /** Tool use metadata */
   toolUse?: {
     name: string;
     status: "running" | "done" | "error";
-  };
-  /** Run ID from gateway for tracking streaming responses */
-  runId?: string;
-  /** Compaction metadata (present when role === "compaction") */
-  compaction?: {
-    beforeTokens: number;
-    afterTokens: number;
-    droppedMessages: number;
-  };
-}
-
-export interface SessionUsage {
-  inputTokens: number;
-  outputTokens: number;
-  totalTokens: number;
-  costCents?: number;
-  model?: string;
-  failover?: {
-    from: string;
-    to: string;
-    reason: string;
   };
 }
 
@@ -96,21 +58,19 @@ export interface AgentSession {
   messages: ChatMessage[];
   /** Current streaming run ID */
   activeRunId: string | null;
-  /** Token count for this session */
+  /** Token count for this session (approximate) */
   tokenCount: number;
-  /** Whether the WS connection to this agent's session is live */
+  /** Whether connected to the backend */
   connected: boolean;
-  /** Real usage data from gateway */
-  usage?: SessionUsage;
+  /** Agent SDK session ID for resumption */
+  sessionId?: string;
 }
 
 // ─── Connection Config ───
 
 export interface DeckConfig {
-  /** Gateway WebSocket URL, default ws://127.0.0.1:18789 */
-  gatewayUrl: string;
-  /** Gateway auth token (from OPENCLAW_GATEWAY_TOKEN) */
-  token?: string;
+  /** Backend WebSocket URL */
+  serverUrl: string;
   /** Agent definitions */
   agents: AgentConfig[];
 }
@@ -120,8 +80,8 @@ export interface DeckConfig {
 export interface DeckState {
   config: DeckConfig;
   sessions: Record<string, AgentSession>;
-  /** Global connection status to gateway */
-  gatewayConnected: boolean;
+  /** Global connection status to backend */
+  serverConnected: boolean;
   /** Column ordering (agent IDs) */
   columnOrder: string[];
 }

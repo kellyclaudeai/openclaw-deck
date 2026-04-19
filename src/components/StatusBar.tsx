@@ -4,22 +4,22 @@ import styles from "./StatusBar.module.css";
 
 export function StatusBar() {
   const stats = useDeckStats();
-  const gatewayUrl = useDeckStore((s) => s.config.gatewayUrl);
+  const serverUrl = useDeckStore((s) => s.config.serverUrl);
 
   return (
     <div className={styles.bar}>
       <span>
-        {gatewayUrl}{" "}
+        {serverUrl}{" "}
         <span
           className={
-            !stats.gatewayConnected
+            !stats.serverConnected
               ? styles.disconnected
               : stats.waitingForUser > 0
                 ? styles.connectedReady
                 : styles.connectedIdle
           }
         >
-          {!stats.gatewayConnected
+          {!stats.serverConnected
             ? "disconnected"
             : stats.waitingForUser > 0
               ? "connected · waiting"
@@ -30,10 +30,18 @@ export function StatusBar() {
       <span>
         {stats.totalAgents} agents · {stats.active} active
         {stats.waitingForUser > 0 && <> · {stats.waitingForUser} waiting</>}
-        {stats.errors > 0 && <> · <span className={styles.error}>{stats.errors} {stats.errors === 1 ? "error" : "errors"}</span></>}
+        {stats.errors > 0 && (
+          <>
+            {" "}
+            ·{" "}
+            <span className={styles.error}>
+              {stats.errors} {stats.errors === 1 ? "error" : "errors"}
+            </span>
+          </>
+        )}
       </span>
       <span className={styles.spacer} />
-      <span>openclaw-deck v2026.2.9</span>
+      <span>multiclaude v0.1.0</span>
     </div>
   );
 }

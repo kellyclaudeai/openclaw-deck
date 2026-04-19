@@ -26,8 +26,8 @@ export function TopBar({
     <div className={styles.bar}>
       {/* Logo */}
       <div className={styles.logo}>
-        <div className={styles.logoIcon}>◈</div>
-        <span className={styles.logoText}>OpenClaw</span>
+        <div className={styles.logoIcon}>🐙</div>
+        <span className={styles.logoText}>MultiClaude</span>
         <span className={styles.logoBadge}>DECK</span>
       </div>
 
@@ -56,18 +56,18 @@ export function TopBar({
           <div
             className={styles.statDot}
             style={{
-              backgroundColor: stats.gatewayConnected ? "#34d399" : "#ef4444",
+              backgroundColor: stats.serverConnected ? "#34d399" : "#ef4444",
             }}
           />
           <span>
             <span
               style={{
-                color: stats.gatewayConnected ? "#34d399" : "#ef4444",
+                color: stats.serverConnected ? "#34d399" : "#ef4444",
               }}
             >
               {stats.active}
             </span>{" "}
-            streaming
+            active
           </span>
         </div>
         <div className={styles.stat}>

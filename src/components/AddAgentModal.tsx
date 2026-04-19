@@ -3,20 +3,17 @@ import type { AgentConfig } from "../types";
 import styles from "./AddAgentModal.module.css";
 
 const ACCENTS = [
-  "#22d3ee", // cyan
-  "#a78bfa", // purple
-  "#34d399", // green
-  "#fb923c", // orange
-  "#f472b6", // pink
-  "#facc15", // yellow
-  "#60a5fa", // blue
-  "#ef4444", // red
+  "#22d3ee",
+  "#a78bfa",
+  "#34d399",
+  "#fb923c",
+  "#f472b6",
+  "#facc15",
+  "#60a5fa",
+  "#ef4444",
 ];
 
-const MODELS = [
-  "claude-sonnet-4-5",
-  "claude-opus-4-6",
-];
+const MODELS = ["claude-opus-4-6", "claude-sonnet-4-6", "claude-haiku-4-5"];
 
 export function AddAgentModal({
   onClose,
@@ -70,7 +67,11 @@ export function AddAgentModal({
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose} onKeyDown={handleKeyDown}>
+    <div
+      className={styles.overlay}
+      onClick={onClose}
+      onKeyDown={handleKeyDown}
+    >
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.title}>New Agent</div>
 
@@ -120,7 +121,7 @@ export function AddAgentModal({
             value={context}
             onChange={(e) => setContext(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Deep web research &amp; synthesis"
+            placeholder="What should this claw focus on?"
           />
         </div>
 
@@ -132,7 +133,9 @@ export function AddAgentModal({
             onChange={(e) => setModel(e.target.value)}
           >
             {MODELS.map((m) => (
-              <option key={m} value={m}>{m}</option>
+              <option key={m} value={m}>
+                {m}
+              </option>
             ))}
           </select>
         </div>
@@ -140,7 +143,11 @@ export function AddAgentModal({
         {error && <div className={styles.error}>{error}</div>}
 
         <div className={styles.actions}>
-          <button className={styles.cancelBtn} onClick={onClose} disabled={loading}>
+          <button
+            className={styles.cancelBtn}
+            onClick={onClose}
+            disabled={loading}
+          >
             Cancel
           </button>
           <button

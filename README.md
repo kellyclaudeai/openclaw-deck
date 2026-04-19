@@ -1,806 +1,364 @@
-# OpenClaw Deck 🦞
+# MultiClaude 🐙
 
-A multi-column chat interface for [OpenClaw](https://openclaw.ai) agents. Chat with multiple AI agents side-by-side in a clean, responsive deck layout.
+**Communicate with many instances of Claude Code on a single adaptive dashboard.**
 
-![OpenClaw Deck](https://img.shields.io/badge/OpenClaw-Deck-blue)
+Run multiple [Claude Code](https://docs.anthropic.com/en/docs/claude-code) agent sessions side-by-side in a multi-column interface. Give each agent a different task and watch them all work on your codebase in parallel.
+
+![MultiClaude](https://img.shields.io/badge/MultiClaude-Deck-blueviolet)
+![Claude Code](https://img.shields.io/badge/Claude_Code-Agent_SDK-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-## Features
-
-- **Multi-column layout** — Chat with 7 agents simultaneously by default
-- **11 Beautiful Themes** — Dark themes from Midnight to Monokai, including popular editor themes (Darcula, Dracula, Nord, Gruvbox)
-- **Markdown rendering** — Full markdown support with syntax highlighting
-- **Keyboard navigation** — Fast switching between columns (Tab, Cmd+1-9, Cmd+K)
-- **Real-time WebSocket** — Live connection to OpenClaw Gateway
-- **Clean UI** — Compact, readable design optimized for productivity
+---
 
 ## Screenshots
 
-![Theme Example 1](images/theme-1.png)
-*OpenClaw Deck with dark theme - Multi-column chat interface*
+![MultiClaude Dashboard](images/theme-1.png)
+*Five Claude Code agents running in parallel, each with independent conversations*
 
-![Theme Example 2](images/theme-2.png)
-*Different theme variant showing markdown rendering*
+![Theme Variants](images/theme-2.png)
+*Full markdown rendering with syntax highlighting across all columns*
 
-![Theme Example 3](images/theme-3.png)
-*Another theme with active conversations*
+![Tool Use](images/theme-3.png)
+*Agents using tools (Read, Edit, Bash, Grep) and streaming results in real-time*
 
-![Theme Example 4](images/theme-4.png)
-*Additional theme showcasing the interface*
-
-## Table of Contents
-
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Running the Application](#running-the-application)
-- [Usage](#usage)
-- [Themes](#themes)
-- [Troubleshooting](#troubleshooting)
-- [Development](#development)
-- [Architecture](#architecture)
-- [Contributing](#contributing)
+![Dark Themes](images/theme-4.png)
+*15 built-in dark themes — Dracula, Nord, Monokai, Cyberpunk, and more*
 
 ---
 
-## Prerequisites
+## What It Does
 
-### Required Software
+Each column is a **real Claude Code session**. Every agent can:
 
-1. **Node.js** (v18 or higher)
-   - Check your version: `node --version`
-   - Install from: https://nodejs.org/
-   - Recommended: Use [nvm](https://github.com/nvm-sh/nvm) for version management
+- Read, write, and edit files in your project
+- Run shell commands
+- Search your codebase (glob, grep)
+- Search the web
+- Maintain full conversation history with session resumption
 
-2. **OpenClaw Gateway** (running locally)
-   - Install OpenClaw: https://openclaw.ai
-   - Or via npm: `npm install -g openclaw`
-   - Verify installation: `openclaw --version`
+You control them all from one dashboard. Send 5 different tasks, watch 5 agents work simultaneously.
 
-3. **Git** (for cloning)
-   - Check: `git --version`
-   - Install: https://git-scm.com/
+### Example Use Cases
 
-### Optional Tools
-
-- **GitHub CLI** (`gh`) for easier repo management
-- A modern browser (Chrome, Firefox, Safari, Edge)
+| Columns | Tasks |
+|---------|-------|
+| 3 agents | "Write tests" / "Add validation" / "Update docs" |
+| 5 agents | Research, implement, review, test, deploy — full pipeline in parallel |
+| 2 agents | One writes code, the other reviews it |
 
 ---
 
-## Installation
+## Quick Start
 
-### Step 1: Clone the Repository
+### Prerequisites
+
+| Requirement | Check | Install |
+|------------|-------|---------|
+| Node.js 18+ | `node --version` | [nodejs.org](https://nodejs.org/) |
+| Claude Code CLI | `claude --version` | `npm install -g @anthropic-ai/claude-code` |
+| API Key | `echo $ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com/) |
+
+### Install & Run
 
 ```bash
-git clone https://github.com/kellyclaudeai/openclaw-deck.git
-cd openclaw-deck
-```
-
-### Step 2: Install Dependencies
-
-```bash
+git clone https://github.com/kellyclaudeai/multiclaude.git
+cd multiclaude
 npm install
 ```
 
-This will install:
-- React, TypeScript, and Vite (core framework)
-- Zustand (state management)
-- react-markdown and highlight.js (rendering)
-- All other required packages
+**Start both servers** (recommended):
 
-**Expected output:**
-```
-added 170 packages, and audited 171 packages in 8s
+```bash
+npm run dev:all
 ```
 
-If you see any warnings about vulnerabilities, they're typically safe to ignore for development.
+Or start them separately:
+
+```bash
+npm run dev:server   # Backend on port 3001
+npm run dev          # Frontend on port 5173
+```
+
+Open **http://localhost:5173** — five agent columns, ready to go.
 
 ---
 
-## Configuration
+## Agent-Friendly Setup
 
-### Step 1: Start OpenClaw Gateway
-
-Before configuring the Deck, ensure your OpenClaw Gateway is running:
+**Copy-paste setup for Claude Code agents or any AI assistant helping with installation:**
 
 ```bash
-# Check if OpenClaw is installed
-openclaw --version
+# 1. Verify prerequisites
+node --version    # Must be v18+
+claude --version  # Must show Claude Code version
 
-# Check gateway status
-openclaw status
+# 2. Verify API key
+test -n "$ANTHROPIC_API_KEY" && echo "API key set" || echo "ERROR: Set ANTHROPIC_API_KEY"
 
-# If not running, start it
-openclaw gateway start
-```
-
-**Expected output:**
-```
-✓ Gateway running at ws://127.0.0.1:18789
-✓ Status: healthy
-```
-
-### Step 2: Get Your Gateway Token
-
-Your gateway token is required for authentication:
-
-```bash
-openclaw config get gateway.token
-```
-
-**Example output:**
-```
-5fd19a1df600fdb1968fadd098b8a7f376a826a7f64ae51f
-```
-
-**Copy this token** — you'll need it in the next step.
-
-### Step 3: Create Environment File
-
-```bash
-cp .env.example .env
-```
-
-Edit the `.env` file:
-
-```bash
-# Use your preferred editor
-nano .env
-# or
-code .env
-# or
-vim .env
-```
-
-Update with your token:
-
-```env
-VITE_GATEWAY_URL=ws://127.0.0.1:18789
-VITE_GATEWAY_TOKEN=your_actual_token_here
-```
-
-**Important:**
-- Replace `your_actual_token_here` with the token from Step 2
-- Do not commit this file to git (it's in `.gitignore`)
-- The gateway URL should match your OpenClaw setup (default is usually correct)
-
----
-
-## Running the Application
-
-### Development Mode (Recommended)
-
-Start the Vite dev server with hot-reload:
-
-```bash
-npm run dev
-```
-
-**Expected output:**
-```
-  VITE v6.4.1  ready in 423 ms
-
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: use --host to expose
-  ➜  press h + enter to show help
-```
-
-**Open your browser** to http://localhost:5173
-
-You should see 7 agent columns load. If input fields are enabled, you're connected successfully!
-
-### Production Build
-
-For deployment or testing the production build:
-
-```bash
-npm run build
-npm run preview
-```
-
-The build output will be in `dist/` and preview will run at http://localhost:4173
-
----
-
-## Updating OpenClaw Deck
-
-To update to the latest version:
-
-```bash
-cd ~/openclaw-deck
-
-# Pull latest changes
-git pull origin main
-
-# Update dependencies
+# 3. Clone and install
+git clone https://github.com/kellyclaudeai/multiclaude.git
+cd multiclaude
 npm install
 
-# Restart the dev server
-npm run dev
+# 4. Start backend (port 3001)
+npx tsx server/index.ts &
+sleep 3
+
+# 5. Start frontend (port 5173)
+npm run dev &
+sleep 3
+
+# 6. Verify both services
+curl -s http://localhost:3001/ | grep -q '"status":"ok"' && echo "Backend: OK" || echo "Backend: FAILED"
+curl -s http://localhost:5173/ | grep -q 'MultiClaude' && echo "Frontend: OK" || echo "Frontend: FAILED"
+
+echo ""
+echo "Open http://localhost:5173 in a browser"
 ```
 
-### If you get conflicts during `git pull`:
-
-```bash
-# Stash local changes first
-git stash
-
-# Pull again
-git pull origin main
-
-# Reapply your changes (optional)
-git stash pop
-```
-
-### If the dev server was already running:
-
-- Kill the old process first (Ctrl+C in the terminal, or `pkill -f "openclaw-deck"`)
-- Then restart with `npm run dev`
-
-### Check for breaking changes:
-
-- Look for any `CHANGELOG.md` or `MIGRATION.md` files after pulling
-- Check the terminal output when `npm install` runs for deprecation warnings
-
-**Update time:** ~30 seconds unless there are conflicts or major dependency updates.
-
----
-
-## Usage
-
-### Basic Chat
-
-1. **Click or Tab** into any agent column input field
-2. **Type your message** and press Enter
-3. Watch the agent respond in real-time with streaming output
-4. **Markdown is rendered** automatically (headers, lists, code blocks, etc.)
-
-### Keyboard Shortcuts
-
-| Shortcut | Action |
-|----------|--------|
-| `Tab` | Move to next column input |
-| `Shift+Tab` | Move to previous column input |
-| `Cmd+1` through `Cmd+9` | Jump directly to column 1-9 |
-| `Cmd+K` | Open "Add Agent" modal |
-| `Enter` | Send message (when in input field) |
-
-### Agent Columns
-
-Each column represents an independent agent conversation:
-- **Labeled 1-7** for quick reference
-- **Color-coded** for visual distinction
-- **Independent scroll** — scroll one column without affecting others
-- **Persistent** — messages remain until you clear them
-
-### Message Display
-
-- **Your messages** appear in a smaller, monospace font with a cyan tint
-- **Agent responses** appear larger with markdown formatting:
-  - Headers (`#`, `##`, `###`)
-  - Lists (bulleted and numbered)
-  - Code blocks with syntax highlighting
-  - Inline code, quotes, tables, and more
-
----
-
-## Themes
-
-OpenClaw Deck comes with **11 beautiful dark themes** inspired by popular code editors and color schemes. Switch themes instantly using the theme selector in the top right corner.
-
-### Available Themes
-
-| Theme | Description |
-|-------|-------------|
-| **Midnight** | Deep blue-black with subtle cyan accents (default) |
-| **Ocean Depths** | Navy blue inspired by ocean depths |
-| **Forest Night** | Dark green forest theme |
-| **Sunset Glow** | Warm burgundy with orange highlights |
-| **Slate Gray** | Professional slate blue |
-| **Purple Haze** | Deep purple with violet accents |
-| **Cyberpunk** | Neon pink and cyan on dark blue |
-| **Rose Garden** | Burgundy with rose pink highlights |
-| **Abyss** | Ultra-dark theme (true black) |
-| **Darcula** | JetBrains IDE classic theme |
-| **Dracula** | The popular Dracula color scheme |
-| **Nord** | Arctic-inspired frost palette |
-| **Gruvbox Dark** | Retro groove color scheme |
-| **Monokai** | Classic Monokai editor theme |
-
-### Switching Themes
-
-1. Look for the **theme icon** (🎨) in the top right corner of the interface
-2. Click to open the theme selector dropdown
-3. Choose any theme — changes apply instantly
-4. Your preference is saved automatically in browser storage
-
-### Theme Persistence
-
-Your selected theme is stored in `localStorage` and persists across:
-- Browser refreshes
-- Closing and reopening tabs
-- Gateway restarts
-
-No configuration needed — just pick your favorite and start chatting.
-
----
-
-## Troubleshooting
-
-### Connection Issues
-
-#### Problem: "WebSocket error" or "Handshake failed"
-
-**Symptoms:**
-- All input fields are disabled/grayed out
-- Status bar shows connection error
-- Console shows WebSocket errors
-
-**Solutions:**
-
-1. **Verify Gateway is Running**
-   ```bash
-   openclaw status
-   ```
-   If not running:
-   ```bash
-   openclaw gateway start
-   ```
-
-2. **Check Your Token**
-   ```bash
-   # Get current token
-   openclaw config get gateway.token
-   
-   # Compare with your .env file
-   cat .env | grep VITE_GATEWAY_TOKEN
-   ```
-   
-   If they don't match, update `.env` with the correct token.
-
-3. **Verify Gateway URL**
-   Most setups use `ws://127.0.0.1:18789`, but check your OpenClaw config:
-   ```bash
-   openclaw config get gateway.port
-   ```
-   
-   If different, update `VITE_GATEWAY_URL` in `.env`
-
-4. **Restart Dev Server**
-   After changing `.env`, stop the dev server (Ctrl+C) and restart:
-   ```bash
-   npm run dev
-   ```
-
-#### Problem: "Token missing" or "Unauthorized"
-
-**Solution:**
-Your `.env` file is likely missing or has an incorrect token.
-
-1. Verify `.env` exists:
-   ```bash
-   ls -la .env
-   ```
-
-2. Check token format (should be a long hex string):
-   ```bash
-   cat .env
-   ```
-
-3. Regenerate if needed:
-   ```bash
-   openclaw gateway restart
-   openclaw config get gateway.token
-   ```
-
-### Display Issues
-
-#### Problem: White Screen or Blank Page
-
-**Solutions:**
-
-1. **Check Browser Console**
-   - Open Developer Tools (F12 or Cmd+Option+I)
-   - Look for JavaScript errors
-   - Common issues: CORS errors, module loading failures
-
-2. **Clear Browser Cache**
-   - Hard refresh: `Cmd+Shift+R` (Mac) or `Ctrl+Shift+R` (Windows/Linux)
-   - Or clear cache in browser settings
-
-3. **Verify Build**
-   ```bash
-   rm -rf dist node_modules
-   npm install
-   npm run dev
-   ```
-
-#### Problem: Can't Type in Input Fields (Disabled)
-
-**Cause:** Gateway connection failed (see [Connection Issues](#connection-issues))
-
-**Quick check:**
-Look at the status bar at the bottom of the page. It should show a green indicator when connected.
-
-#### Problem: Markdown Not Rendering
-
-**Solution:**
-This is a known issue in some browsers with strict content security policies.
-
-1. Try a different browser (Chrome works best)
-2. Check browser console for CSP errors
-3. Ensure you're on the latest version:
-   ```bash
-   git pull origin master
-   npm install
-   ```
-
-### Performance Issues
-
-#### Problem: Slow or Laggy UI
-
-**Solutions:**
-
-1. **Reduce Active Columns**
-   Edit `src/App.tsx` and change:
-   ```typescript
-   buildDefaultAgents(7)  // Change to 3 or 4
-   ```
-
-2. **Disable Syntax Highlighting**
-   If code blocks are causing lag, you can disable highlighting by commenting out the import in `src/components/AgentColumn.tsx`:
-   ```typescript
-   // import "highlight.js/styles/github-dark.css";
-   ```
-
-3. **Check Gateway Health**
-   ```bash
-   openclaw doctor
-   ```
-
-### Installation Issues
-
-#### Problem: `npm install` Fails
-
-**Solutions:**
-
-1. **Check Node Version**
-   ```bash
-   node --version
-   ```
-   Must be v18 or higher. Upgrade if needed.
-
-2. **Clear npm Cache**
-   ```bash
-   npm cache clean --force
-   rm -rf node_modules package-lock.json
-   npm install
-   ```
-
-3. **Try Different Registry**
-   ```bash
-   npm install --registry https://registry.npmjs.org/
-   ```
-
----
-
-## Development
-
-### Project Structure
-
-```
-openclaw-deck/
-├── src/
-│   ├── components/          # React UI components
-│   │   ├── AgentColumn.tsx        # Individual agent chat column
-│   │   ├── TopBar.tsx             # Header with navigation
-│   │   ├── StatusBar.tsx          # Connection status footer
-│   │   └── AddAgentModal.tsx      # Agent creation dialog
-│   ├── lib/                 # Core libraries
-│   │   ├── gateway-client.ts      # WebSocket client for OpenClaw Gateway
-│   │   └── store.ts               # Zustand state management
-│   ├── hooks/               # React hooks
-│   │   └── index.ts               # Custom hooks (useAgentSession, etc.)
-│   ├── types/               # TypeScript type definitions
-│   │   └── index.ts               # AgentConfig, Message, etc.
-│   ├── App.tsx              # Main application component
-│   ├── App.css              # Global styles
-│   └── main.tsx             # Application entry point
-├── public/                  # Static assets
-├── dist/                    # Build output (gitignored)
-├── .env                     # Environment config (gitignored)
-├── .env.example             # Example environment config
-├── package.json             # Dependencies and scripts
-├── tsconfig.json            # TypeScript configuration
-├── vite.config.ts           # Vite build configuration
-└── README.md                # This file
-```
-
-### Available Scripts
-
-```bash
-# Development
-npm run dev          # Start dev server with hot reload
-
-# Building
-npm run build        # Production build to dist/
-npm run preview      # Preview production build locally
-
-# Code Quality
-npm run type-check   # Run TypeScript type checking
-npm run lint         # Run ESLint (if configured)
-
-# Maintenance
-npm run clean        # Remove dist/ and node_modules/
-```
-
-### Making Changes
-
-#### Customizing Agent Colors
-
-Edit `src/App.tsx`:
-
-```typescript
-const AGENT_ACCENTS = [
-  "#22d3ee",  // cyan
-  "#a78bfa",  // purple
-  "#34d399",  // green
-  "#f59e0b",  // orange
-  "#f472b6",  // pink
-  "#60a5fa",  // blue
-  "#facc15",  // yellow
-  // Add more colors here
-];
-```
-
-#### Changing Default Column Count
-
-Edit `src/App.tsx`:
-
-```typescript
-const [initialAgents] = useState<AgentConfig[]>(() =>
-  buildDefaultAgents(7)  // Change this number
-);
-```
-
-#### Customizing Message Styles
-
-Edit `src/components/AgentColumn.module.css`:
-
-```css
-/* User messages */
-.userMsg .messageText {
-  font-size: 12px;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.86);
-  /* Customize here */
-}
-
-/* Assistant messages */
-.assistantMsg .messageText {
-  line-height: 1.22;
-  /* Customize here */
-}
-```
+### Troubleshooting Quick Reference
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| "process exited with code 1" | API key missing | `export ANTHROPIC_API_KEY=sk-ant-...` |
+| Port 3001 in use | Old server running | `lsof -ti:3001 \| xargs kill -9` |
+| Port 5173 in use | Old frontend running | `lsof -ti:5173 \| xargs kill -9` |
+| `claude` not found | CLI not installed | `npm install -g @anthropic-ai/claude-code` |
+| `tsx` not found | Run via npx | `npx tsx server/index.ts` |
+| Agents error immediately | CLI broken | Test directly: `claude -p "hello"` |
+| Frontend blank page | Deps stale | `rm -rf node_modules && npm install` |
+| "disconnected" in status bar | Backend not running | Start backend first: `npm run dev:server` |
 
 ---
 
 ## Architecture
 
+```
+┌───────────────────────────────────────────────────────────┐
+│  Browser — http://localhost:5173                          │
+│                                                           │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐     │
+│  │ Claude 1 │ │ Claude 2 │ │ Claude 3 │ │ Claude 4 │ ... │
+│  │          │ │          │ │          │ │          │     │
+│  │  input   │ │  input   │ │  input   │ │  input   │     │
+│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘     │
+│       └──────┬──────┴──────┬─────┘            │           │
+│              ▼             ▼                   ▼           │
+│     ┌──────────────────────────────────────────────┐      │
+│     │  Zustand Store  ←→  MultiClaude WS Client    │      │
+│     └──────────────────────┬───────────────────────┘      │
+└────────────────────────────┼──────────────────────────────┘
+                             │  WebSocket
+                             ▼
+┌────────────────────────────────────────────────────────────┐
+│  MultiClaude Backend — server/index.ts (port 3001)         │
+│                                                            │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐           │
+│  │  Session 1  │  │  Session 2  │  │  Session 3  │  ...    │
+│  │  query()    │  │  query()    │  │  query()    │         │
+│  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘          │
+│        └───────────┬────┘              │                  │
+│                    ▼                   ▼                  │
+│  ┌──────────────────────────────────────────────────┐     │
+│  │  @anthropic-ai/claude-agent-sdk                  │     │
+│  │                                                  │     │
+│  │  Each session gets:                              │     │
+│  │  • Read, Write, Edit     (file operations)       │     │
+│  │  • Bash                  (shell commands)        │     │
+│  │  • Glob, Grep            (codebase search)       │     │
+│  │  • WebSearch, WebFetch   (web access)            │     │
+│  │  • Session resumption    (multi-turn memory)     │     │
+│  └──────────────────────────────────────────────────┘     │
+└────────────────────────────────────────────────────────────┘
+```
+
 ### Data Flow
 
 ```
-User Input
-    ↓
-AgentColumn Component
-    ↓
-useSendMessage Hook
-    ↓
-GatewayClient (WebSocket)
-    ↓
-OpenClaw Gateway
-    ↓
-AI Model (Claude, GPT, etc.)
-    ↓
-Gateway Response (streaming)
-    ↓
-GatewayClient (WebSocket)
-    ↓
-Zustand Store Update
-    ↓
-React Re-render
-    ↓
-Message Display (Markdown)
+You type a message
+  → React component
+    → Zustand store
+      → WebSocket (ws://localhost:3001/ws)
+        → Backend spawns query({ prompt, options })
+          → Claude Code subprocess with full tool access
+            → Streaming events back:
+              status: "thinking"
+              chunk: "Here is my analysis..."
+              tool_use: "Read" / "Edit" / "Bash"
+              result: "Done! Here's what I did..."
+            → WebSocket
+          → Store update
+        → React re-render
+      → Markdown + syntax highlighting
+    → You see the response
 ```
 
-### State Management
+### WebSocket Protocol
 
-The app uses **Zustand** for state management:
+```
+Client → Server:
+  { type: "send", agentId: "agent-1", text: "Explain this codebase" }
 
-- `useDeckStore` — Global store for all agent sessions
-- Each agent has:
-  - `messages[]` — Chat history
-  - `isStreaming` — Current streaming state
-  - `gatewayConnected` — Connection status
-
-### WebSocket Connection
-
-The `GatewayClient` (`src/lib/gateway-client.ts`) handles:
-
-1. **Authentication** — Token-based handshake with Gateway
-2. **Message Routing** — Sending user input, receiving agent responses
-3. **Streaming** — Real-time token streaming from AI responses
-4. **Reconnection** — Automatic reconnect on connection loss
-
-### Rendering Pipeline
-
-1. User types message and presses Enter
-2. Message added to local state immediately (optimistic update)
-3. WebSocket sends message to Gateway
-4. Gateway streams response back in chunks
-5. Each chunk triggers a React state update
-6. `react-markdown` renders the accumulated text
-7. `highlight.js` applies syntax highlighting to code blocks
+Server → Client:
+  { type: "connected" }
+  { type: "status",       agentId, runId, status: "thinking" | "streaming" | "idle" }
+  { type: "session_init", agentId, sessionId }
+  { type: "chunk",        agentId, runId, text: "partial response..." }
+  { type: "tool_use",     agentId, runId, toolName: "Read" }
+  { type: "result",       agentId, runId, text: "final response" }
+  { type: "error",        agentId, message: "what went wrong" }
+```
 
 ---
 
-## Agent-Friendly Setup Instructions
+## Features
 
-**If you're an AI agent helping someone set up OpenClaw Deck, use these exact steps:**
+### Multi-Agent Parallelism
+Run 5+ independent Claude Code sessions simultaneously. Each column has its own conversation, its own session, its own tool access.
+
+### Full Claude Code Tool Access
+Every agent gets the complete Claude Code toolset:
+- **Read / Write / Edit** — Full file system access
+- **Bash** — Shell command execution
+- **Glob / Grep** — Fast codebase search
+- **WebSearch / WebFetch** — Internet access
+
+### Session Resumption
+Conversations are multi-turn. Send a follow-up message and the agent picks up right where it left off, with full context from previous turns.
+
+### Real-Time Streaming
+See responses as they arrive:
+- **Thinking indicator** when the agent is reasoning
+- **Tool use badges** when the agent reads files or runs commands
+- **Streaming text** as the response is generated
+- **Final result** rendered with full markdown
+
+### 15 Dark Themes
+
+| Theme | Style |
+|-------|-------|
+| Midnight (default) | Deep blue-black, cyan accents |
+| Ocean Depths | Navy blue, aqua |
+| Forest Night | Dark green, natural |
+| Sunset Glow | Burgundy, orange |
+| Slate Gray | Professional slate |
+| Purple Haze | Deep purple, violet |
+| Cyberpunk | Neon pink + cyan |
+| Rose Garden | Burgundy, rose pink |
+| Abyss | Ultra-dark black |
+| OLED Black | Pure black |
+| Darcula | JetBrains classic |
+| Dracula | Popular palette |
+| Nord | Arctic frost |
+| Gruvbox Dark | Retro groove |
+| Monokai | Classic editor |
+
+Switch instantly via the theme selector in the top bar. Preference persists in localStorage.
+
+### Keyboard Navigation
+
+| Shortcut | Action |
+|----------|--------|
+| `Enter` | Send message |
+| `Shift+Enter` | New line in input |
+| `Tab` / `Shift+Tab` | Next / previous column |
+| `Cmd+1` – `Cmd+9` | Jump to column 1–9 |
+| `Cmd+K` | Add new agent column |
+
+---
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ANTHROPIC_API_KEY` | *(required)* | Your Anthropic API key |
+| `PORT` | `3001` | Backend server port |
+| `MULTICLAUDE_CWD` | `process.cwd()` | Working directory for all agents |
+| `VITE_SERVER_URL` | `ws://127.0.0.1:3001/ws` | Backend WebSocket URL |
+
+### Point Agents at a Different Project
 
 ```bash
-# 1. Verify prerequisites
-node --version  # Should be v18+
-openclaw --version  # Should show OpenClaw is installed
-
-# 2. Start OpenClaw Gateway (if not running)
-openclaw gateway start
-openclaw status  # Verify it's running
-
-# 3. Get gateway token
-export GATEWAY_TOKEN=$(openclaw config get gateway.token)
-echo "Gateway token: $GATEWAY_TOKEN"
-
-# 4. Clone and setup
-git clone https://github.com/kellyclaudeai/openclaw-deck.git
-cd openclaw-deck
-npm install
-
-# 5. Configure environment
-cat > .env << EOF
-VITE_GATEWAY_URL=ws://127.0.0.1:18789
-VITE_GATEWAY_TOKEN=$GATEWAY_TOKEN
-EOF
-
-# 6. Start dev server
-npm run dev
-
-# 7. Open browser
-echo "✓ Setup complete! Open http://localhost:5173 in your browser"
+MULTICLAUDE_CWD=/path/to/your/project npx tsx server/index.ts
 ```
 
-**Expected result:** Browser opens with 7 agent columns, all input fields enabled and ready for messages.
+### Change Default Column Count
 
-**If there are errors:**
-1. Check that gateway is running: `openclaw status`
-2. Verify token in `.env` matches: `openclaw config get gateway.token`
-3. Check browser console for specific errors (F12)
-4. Try restarting dev server: Stop with Ctrl+C, then `npm run dev` again
+Edit `src/App.tsx`, line with `buildDefaultAgents(5)` — change `5` to any number.
+
+### URL Parameters
+
+Override the backend URL via query string:
+```
+http://localhost:5173/?server=ws://other-host:3001/ws
+```
+
+---
+
+## Project Structure
+
+```
+multiclaude/
+├── server/
+│   ├── index.ts              # Backend: WS server + Claude Agent SDK
+│   └── tsconfig.json
+├── src/
+│   ├── components/
+│   │   ├── AgentColumn.tsx   # Chat column (messages + input + status)
+│   │   ├── TopBar.tsx        # Header (logo, tabs, stats, theme)
+│   │   ├── StatusBar.tsx     # Footer (connection status, version)
+│   │   ├── AddAgentModal.tsx # New agent dialog
+│   │   └── ThemeSwitcher.tsx # Theme dropdown
+│   ├── lib/
+│   │   ├── multiclaude-client.ts  # WebSocket client
+│   │   └── store.ts               # Zustand state management
+│   ├── hooks/index.ts        # React hooks
+│   ├── types/index.ts        # TypeScript protocol + UI types
+│   ├── themes.ts             # 15 theme definitions
+│   ├── App.tsx               # Root component
+│   ├── App.css               # Global styles
+│   └── main.tsx              # Entry point
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+└── README.md
+```
+
+### Scripts
+
+| Script | What it does |
+|--------|-------------|
+| `npm run dev` | Frontend dev server (port 5173) |
+| `npm run dev:server` | Backend server (port 3001) |
+| `npm run dev:all` | Both servers together |
+| `npm run build` | Production frontend build |
+| `npm run preview` | Preview production build |
+
+### Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, TypeScript 5.7, Vite 6 |
+| State | Zustand 5 |
+| Rendering | react-markdown, remark-gfm, rehype-highlight |
+| Backend | Node.js, ws (WebSocket) |
+| Agent SDK | @anthropic-ai/claude-agent-sdk |
+| Dev | tsx, concurrently |
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Here's how to contribute:
-
-### Reporting Issues
-
-1. Check [existing issues](https://github.com/kellyclaudeai/openclaw-deck/issues)
-2. Open a new issue with:
-   - Clear description of the problem
-   - Steps to reproduce
-   - Expected vs actual behavior
-   - Screenshots if applicable
-   - Browser and OS information
-
-### Submitting Changes
-
-1. **Fork** the repository
-2. **Clone** your fork:
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/openclaw-deck.git
-   ```
-3. **Create a branch**:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-4. **Make your changes** and test thoroughly
-5. **Commit** with clear messages:
-   ```bash
-   git commit -m "Add feature: description of what you added"
-   ```
-6. **Push** to your fork:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-7. **Open a Pull Request** on GitHub
-
-### Development Guidelines
-
-- Follow existing code style (TypeScript + React best practices)
-- Add comments for complex logic
-- Test in multiple browsers if changing UI
-- Update README if adding features or changing setup
-- Keep commits focused and atomic
-
----
-
-## FAQ
-
-### Can I use this with a remote OpenClaw Gateway?
-
-Yes! Update `VITE_GATEWAY_URL` in `.env`:
-
-```env
-VITE_GATEWAY_URL=wss://your-gateway-domain.com
-VITE_GATEWAY_TOKEN=your_remote_token
-```
-
-Note: Use `wss://` for secure connections over HTTPS.
-
-### Can I run more than 7 columns?
-
-Yes, edit `src/App.tsx` and change the number in `buildDefaultAgents(7)`.
-
-### Does this work with self-hosted OpenClaw?
-
-Yes! As long as your OpenClaw Gateway is accessible, the Deck will work.
-
-### Can I customize the agent models?
-
-Yes, but you need to configure models in your OpenClaw Gateway settings. The Deck connects to whatever agents are configured in your gateway.
-
-### Is there a Docker version?
-
-Not yet, but contributions welcome! The current setup is optimized for local development.
-
-### Can I deploy this to production?
-
-Yes:
-1. Run `npm run build`
-2. Deploy the `dist/` folder to any static hosting (Vercel, Netlify, GitHub Pages, etc.)
-3. Configure your environment variables in the hosting platform
-4. Ensure your OpenClaw Gateway is accessible from the deployed URL
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Make changes and verify: `npx tsc --noEmit && npm run build`
+4. Commit with a clear message
+5. Open a Pull Request
 
 ---
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details
-
-## Related Projects
-
-- [OpenClaw](https://github.com/openclaw/openclaw) — The main OpenClaw project
-- [OpenClaw Docs](https://docs.openclaw.ai) — Official documentation
-- [ClawHub](https://clawhub.com) — Community skills and tools
-
-## Acknowledgments
-
-Built with ❤️ for the OpenClaw community by [@kellyclaudeai](https://github.com/kellyclaudeai)
-
-Special thanks to all contributors and the OpenClaw team.
-
----
-
-## Support
-
-- **Documentation:** This README + [OpenClaw Docs](https://docs.openclaw.ai)
-- **Issues:** [GitHub Issues](https://github.com/kellyclaudeai/openclaw-deck/issues)
-- **Community:** [OpenClaw Discord](https://discord.com/invite/clawd)
-
-**Need help?** Open an issue with the `question` label and include:
-- What you're trying to do
-- What's happening instead
-- Relevant error messages or screenshots
-- Your environment (OS, Node version, OpenClaw version)
+MIT — see [LICENSE](LICENSE)

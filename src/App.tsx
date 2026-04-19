@@ -9,21 +9,6 @@ import type { AgentConfig } from "./types";
 import { themes, applyTheme } from "./themes";
 import "./App.css";
 
-/**
- * Agent column configuration.
- *
- * You're running default single-agent mode, so there's one agent: "main".
- * The Gateway routes all messages to the default workspace at:
- *   /Users/austenallred/.openclaw/workspace
- *
- * To add more columns later, set up multi-agent in openclaw.json:
- *   { "agents": { "list": [
- *     { "id": "research", "workspace": "~/.openclaw/workspace-research" },
- *     { "id": "codegen",  "workspace": "~/.openclaw/workspace-codegen" },
- *   ]}}
- *
- * Then add matching entries here.
- */
 const AGENT_ACCENTS = [
   "#22d3ee",
   "#a78bfa",
@@ -41,54 +26,47 @@ const AGENT_ACCENTS = [
 
 function buildDefaultAgents(count: number): AgentConfig[] {
   return Array.from({ length: count }, (_, i) => {
-    // First agent uses "main" (default agent in OpenClaw)
-    const agentId = i === 0 ? "main" : `agent-${i + 1}`;
-    const agentName = i === 0 ? "Main" : `Agent ${i + 1}`;
-    
+    const agentId = i === 0 ? "agent-1" : `agent-${i + 1}`;
+    const agentName = i === 0 ? "Claude 1" : `Claude ${i + 1}`;
+
     return {
       id: agentId,
       name: agentName,
       icon: String(i + 1),
       accent: AGENT_ACCENTS[i % AGENT_ACCENTS.length],
       context: "",
-      model: "claude-sonnet-4-5",
+      model: "claude-opus-4-6",
     };
   });
 }
 
-function getGatewayConfig() {
+function getServerConfig() {
   const params = new URLSearchParams(window.location.search);
-  let gatewayUrl =
-    params.get("gateway") ||
-    import.meta.env.VITE_GATEWAY_URL ||
-    "ws://127.0.0.1:18789";
+  let serverUrl =
+    params.get("server") ||
+    import.meta.env.VITE_SERVER_URL ||
+    "ws://127.0.0.1:3001/ws";
 
   // Resolve relative paths (e.g. "/ws") to full WebSocket URLs
-  if (gatewayUrl.startsWith("/")) {
+  if (serverUrl.startsWith("/")) {
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-    gatewayUrl = `${proto}//${window.location.host}${gatewayUrl}`;
+    serverUrl = `${proto}//${window.location.host}${serverUrl}`;
   }
 
-  return {
-    gatewayUrl,
-    token:
-      params.get("token") ||
-      import.meta.env.VITE_GATEWAY_TOKEN ||
-      undefined,
-  };
+  return { serverUrl };
 }
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("All Agents");
   const [showAddModal, setShowAddModal] = useState(false);
   const [initialAgents] = useState<AgentConfig[]>(() =>
-    buildDefaultAgents(7)
+    buildDefaultAgents(5)
   );
   const columnOrder = useDeckStore((s) => s.columnOrder);
-  const createAgentOnGateway = useDeckStore((s) => s.createAgentOnGateway);
+  const addAgent = useDeckStore((s) => s.addAgent);
   const theme = useDeckStore((s) => s.theme);
 
-  const { gatewayUrl, token } = getGatewayConfig();
+  const { serverUrl } = getServerConfig();
 
   // Apply theme on mount and when it changes
   useEffect(() => {
@@ -99,8 +77,7 @@ export default function App() {
   }, [theme]);
 
   useDeckInit({
-    gatewayUrl,
-    token,
+    serverUrl,
     agents: initialAgents,
   });
 
@@ -144,7 +121,7 @@ export default function App() {
       {showAddModal && (
         <AddAgentModal
           onClose={() => setShowAddModal(false)}
-          onCreate={createAgentOnGateway}
+          onCreate={async (agent) => addAgent(agent)}
         />
       )}
     </div>

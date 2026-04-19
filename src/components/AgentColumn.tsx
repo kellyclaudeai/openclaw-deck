@@ -10,7 +10,7 @@ import {
   useAutoScroll,
 } from "../hooks";
 import { useDeckStore } from "../lib/store";
-import type { AgentStatus, ChatMessage, AgentSession } from "../types";
+import type { AgentStatus, ChatMessage } from "../types";
 import styles from "./AgentColumn.module.css";
 
 // ─── Status Indicator ───
@@ -31,8 +31,7 @@ function StatusBadge({
           ? "#6b7280"
           : "rgba(255,255,255,0.25)";
 
-  const label =
-    status === "tool_use" ? "tool use" : status;
+  const label = status === "tool_use" ? "tool use" : status;
 
   const isActive =
     status === "streaming" || status === "thinking" || status === "tool_use";
@@ -60,28 +59,26 @@ function MessageBubble({
   accent: string;
 }) {
   const isUser = message.role === "user";
-
-  if (message.thinking) {
-    return (
-      <div className={styles.thinkingBubble}>
-        <span className={styles.thinkingDot} style={{ color: accent }}>
-          ●
-        </span>
-        <span style={{ color: accent }}>{message.text}</span>
-      </div>
-    );
-  }
+  const isSystem = message.role === "system";
 
   if (message.toolUse) {
     return (
       <div className={styles.toolBubble}>
-        <span className={styles.toolIcon}>⚙</span>
+        <span className={styles.toolIcon}>&#9881;</span>
         <span>
           {message.toolUse.name}
           {message.toolUse.status === "running" && (
             <span className={styles.thinkingDot}> ...</span>
           )}
         </span>
+      </div>
+    );
+  }
+
+  if (isSystem) {
+    return (
+      <div className={styles.toolBubble}>
+        <span style={{ opacity: 0.7 }}>{message.text}</span>
       </div>
     );
   }
@@ -93,7 +90,7 @@ function MessageBubble({
       }`}
     >
       {isUser && <div className={styles.roleLabel}>You</div>}
-      {!isUser && <div className={styles.roleLabel}>Assistant</div>}
+      {!isUser && <div className={styles.roleLabel}>Claude</div>}
       <div
         className={styles.messageText}
         style={
@@ -114,7 +111,7 @@ function MessageBubble({
               ),
             }}
           >
-            {message.text}
+            {message.text || (message.streaming ? "" : "(no response)")}
           </ReactMarkdown>
         )}
         {message.streaming && (
@@ -125,81 +122,24 @@ function MessageBubble({
   );
 }
 
-// ─── Compaction Divider ───
-
-function CompactionDivider({ message }: { message: ChatMessage }) {
-  const c = message.compaction;
-  if (!c) return null;
-
-  return (
-    <div className={styles.compactionDivider}>
-      <div className={styles.compactionLine} />
-      <span className={styles.compactionLabel}>
-        context compacted &middot; {c.droppedMessages} msgs dropped &middot;{" "}
-        {c.beforeTokens.toLocaleString()} &rarr; {c.afterTokens.toLocaleString()} tokens
-      </span>
-      <div className={styles.compactionLine} />
-    </div>
-  );
-}
-
-// ─── Failover Badge ───
-
-function FailoverBadge({ session }: { session: AgentSession }) {
-  const failover = session.usage?.failover;
-  if (!failover) return null;
-
-  return (
-    <span className={styles.failoverBadge} title={failover.reason}>
-      failover: {failover.from} &rarr; {failover.to}
-    </span>
-  );
-}
-
-// ─── Context Window Helper ───
-
-const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
-  "gpt-4": 128000,
-  "gpt-4o": 128000,
-  "gpt-4-turbo": 128000,
-  "claude-3-5-sonnet": 200000,
-  "claude-3-opus": 200000,
-  "claude-sonnet-4": 200000,
-  "gemini-2.0-flash": 1000000,
-  "gemini-2.5-flash": 1000000,
-  "gemini-2.5-pro": 2000000,
-};
-
-function getContextWindow(model?: string): number {
-  if (!model) return 200000; // default
-  
-  // Match partial model names
-  for (const [key, size] of Object.entries(MODEL_CONTEXT_WINDOWS)) {
-    if (model.toLowerCase().includes(key.toLowerCase())) {
-      return size;
-    }
-  }
-  
-  return 200000; // default fallback
-}
-
 // ─── Main Column ───
 
-export function AgentColumn({ agentId, columnIndex }: { agentId: string; columnIndex: number }) {
+export function AgentColumn({
+  agentId,
+  columnIndex,
+}: {
+  agentId: string;
+  columnIndex: number;
+}) {
   const session = useAgentSession(agentId);
   const config = useAgentConfig(agentId);
   const send = useSendMessage(agentId);
-  const deleteAgentOnGateway = useDeckStore((s) => s.deleteAgentOnGateway);
+  const removeAgent = useDeckStore((s) => s.removeAgent);
   const [input, setInput] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const scrollRef = useAutoScroll(session?.messages);
 
   if (!config || !session) return null;
-
-  // Calculate context usage
-  const contextWindow = getContextWindow(session.usage?.model || config.model);
-  const totalTokens = session.usage?.totalTokens || session.tokenCount || 0;
-  const contextPercent = contextWindow > 0 ? (totalTokens / contextWindow) * 100 : 0;
 
   const handleSend = () => {
     const text = input.trim();
@@ -229,17 +169,16 @@ export function AgentColumn({ agentId, columnIndex }: { agentId: string; columnI
     session.status === "thinking" ||
     session.status === "tool_use";
 
-  // Determine if agent has completed work ready to review
   const lastMessage = session.messages[session.messages.length - 1];
-  const hasCompletedWork = 
+  const hasCompletedWork =
     session.status === "idle" &&
     session.messages.length > 0 &&
     lastMessage?.role === "assistant" &&
     !lastMessage?.streaming;
 
   return (
-    <div 
-      className={styles.column} 
+    <div
+      className={styles.column}
       data-status={session.status}
       data-has-completed-work={hasCompletedWork}
     >
@@ -261,43 +200,41 @@ export function AgentColumn({ agentId, columnIndex }: { agentId: string; columnI
             <StatusBadge status={session.status} accent={config.accent} />
           </div>
           <div className={styles.headerMeta}>
-            {config.context ? <span>{config.context}</span> : null}
             {config.model && (
+              <span style={{ color: config.accent, opacity: 0.5 }}>
+                {config.model}
+              </span>
+            )}
+            {session.sessionId && (
               <>
-                {config.context ? <span className={styles.metaDot}>·</span> : null}
-                <span style={{ color: config.accent, opacity: 0.5 }}>
-                  {config.model}
+                <span className={styles.metaDot}>·</span>
+                <span style={{ opacity: 0.4, fontSize: "0.7em" }}>
+                  {session.sessionId.slice(0, 8)}
                 </span>
               </>
             )}
-            <FailoverBadge session={session} />
           </div>
           <div className={styles.headerUsage}>
-            <span style={{ 
-              opacity: contextPercent > 80 ? 1 : 0.6, 
-              color: contextPercent > 90 ? '#ef4444' : contextPercent > 80 ? '#f59e0b' : 'inherit' 
-            }}>
-              {totalTokens.toLocaleString()} tokens · {contextPercent.toFixed(1)}% of context
+            <span style={{ opacity: 0.6 }}>
+              {session.messages.length} messages ·{" "}
+              {session.tokenCount.toLocaleString()} chars
             </span>
           </div>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.headerBtn} title="Settings">
-            ⚙
-          </button>
           <button
             className={`${styles.deleteBtn} ${confirmDelete ? styles.confirmDelete : ""}`}
-            title={confirmDelete ? "Click again to confirm" : "Delete agent"}
+            title={confirmDelete ? "Click again to confirm" : "Remove column"}
             onClick={() => {
               if (confirmDelete) {
-                deleteAgentOnGateway(agentId);
+                removeAgent(agentId);
               } else {
                 setConfirmDelete(true);
                 setTimeout(() => setConfirmDelete(false), 3000);
               }
             }}
           >
-            {confirmDelete ? "✕" : "×"}
+            {confirmDelete ? "\u2715" : "\u00d7"}
           </button>
         </div>
       </div>
@@ -312,15 +249,25 @@ export function AgentColumn({ agentId, columnIndex }: { agentId: string; columnI
             >
               {columnIndex + 1}
             </div>
-            <p>Send a message to start a conversation with {config.name}</p>
+            <p>Send a message to start a Claude Code session</p>
           </div>
         )}
-        {session.messages.map((msg) =>
-          msg.role === "compaction" ? (
-            <CompactionDivider key={msg.id} message={msg} />
-          ) : (
-            <MessageBubble key={msg.id} message={msg} accent={config.accent} />
-          )
+        {session.messages.map((msg) => (
+          <MessageBubble key={msg.id} message={msg} accent={config.accent} />
+        ))}
+        {isActive && session.messages.every((m) => !m.streaming) && (
+          <div className={styles.thinkingBubble}>
+            <span className={styles.thinkingDot} style={{ color: config.accent }}>
+              ●
+            </span>
+            <span style={{ color: config.accent }}>
+              {session.status === "thinking"
+                ? "thinking..."
+                : session.status === "tool_use"
+                  ? "using tools..."
+                  : "working..."}
+            </span>
+          </div>
         )}
       </div>
 
@@ -348,7 +295,7 @@ export function AgentColumn({ agentId, columnIndex }: { agentId: string; columnI
                 : undefined
             }
           >
-            ↑
+            &#8593;
           </button>
         </div>
         {isActive && (

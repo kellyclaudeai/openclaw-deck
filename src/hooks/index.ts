@@ -68,16 +68,13 @@ export function useAutoScroll(dep: unknown) {
  */
 export function useDeckStats() {
   const sessions = useDeckStore((s) => s.sessions);
-  const connected = useDeckStore((s) => s.gatewayConnected);
+  const connected = useDeckStore((s) => s.serverConnected);
 
   const agents = Object.values(sessions);
   const streaming = agents.filter((a) => a.status === "streaming").length;
   const thinking = agents.filter((a) => a.status === "thinking").length;
   const errors = agents.filter((a) => a.status === "error").length;
-  const totalTokens = agents.reduce(
-    (sum, a) => sum + (a.usage?.totalTokens ?? a.tokenCount),
-    0
-  );
+  const totalTokens = agents.reduce((sum, a) => sum + a.tokenCount, 0);
   const waitingForUser = agents.filter((a) => {
     if (a.status !== "idle" || a.messages.length === 0) return false;
     const last = a.messages[a.messages.length - 1];
@@ -85,7 +82,7 @@ export function useDeckStats() {
   }).length;
 
   return {
-    gatewayConnected: connected,
+    serverConnected: connected,
     totalAgents: agents.length,
     streaming,
     thinking,

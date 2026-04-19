@@ -5,17 +5,15 @@ import type {
   AgentStatus,
   ChatMessage,
   DeckConfig,
-  GatewayEvent,
-  SessionUsage,
+  ServerFrame,
 } from "../types";
-import { GatewayClient } from "./gateway-client";
+import { MultiClaudeClient } from "./multiclaude-client";
 import { themes, applyTheme } from "../themes";
 
 // ─── Default Config ───
 
 const DEFAULT_CONFIG: DeckConfig = {
-  gatewayUrl: "ws://127.0.0.1:18789",
-  token: undefined,
+  serverUrl: "ws://127.0.0.1:3001/ws",
   agents: [],
 };
 
@@ -24,9 +22,9 @@ const DEFAULT_CONFIG: DeckConfig = {
 interface DeckStore {
   config: DeckConfig;
   sessions: Record<string, AgentSession>;
-  gatewayConnected: boolean;
+  serverConnected: boolean;
   columnOrder: string[];
-  client: GatewayClient | null;
+  client: MultiClaudeClient | null;
   theme: string;
 
   // Actions
@@ -36,11 +34,7 @@ interface DeckStore {
   reorderColumns: (order: string[]) => void;
   sendMessage: (agentId: string, text: string) => Promise<void>;
   setAgentStatus: (agentId: string, status: AgentStatus) => void;
-  appendMessageChunk: (agentId: string, runId: string, chunk: string) => void;
-  finalizeMessage: (agentId: string, runId: string) => void;
-  handleGatewayEvent: (event: GatewayEvent) => void;
-  createAgentOnGateway: (agent: AgentConfig) => Promise<void>;
-  deleteAgentOnGateway: (agentId: string) => Promise<void>;
+  handleServerFrame: (frame: ServerFrame) => void;
   disconnect: () => void;
   setTheme: (themeId: string) => void;
 }
@@ -67,10 +61,10 @@ function makeId(): string {
 export const useDeckStore = create<DeckStore>((set, get) => ({
   config: DEFAULT_CONFIG,
   sessions: {},
-  gatewayConnected: false,
+  serverConnected: false,
   columnOrder: [],
   client: null,
-  theme: 'midnight',
+  theme: "midnight",
 
   initialize: (partialConfig) => {
     const config = { ...DEFAULT_CONFIG, ...partialConfig };
@@ -82,15 +76,12 @@ export const useDeckStore = create<DeckStore>((set, get) => ({
       columnOrder.push(agent.id);
     }
 
-    // Create the gateway client
-    const client = new GatewayClient({
-      url: config.gatewayUrl,
-      token: config.token,
-      onEvent: (event) => get().handleGatewayEvent(event),
+    const client = new MultiClaudeClient({
+      url: config.serverUrl,
+      onFrame: (frame) => get().handleServerFrame(frame),
       onConnection: (connected) => {
-        set({ gatewayConnected: connected });
+        set({ serverConnected: connected });
         if (connected) {
-          // Mark all agent sessions as connected
           const sessions = { ...get().sessions };
           for (const id of Object.keys(sessions)) {
             sessions[id] = { ...sessions[id], connected: true };
@@ -137,9 +128,12 @@ export const useDeckStore = create<DeckStore>((set, get) => ({
   sendMessage: async (agentId, text) => {
     const { client, sessions } = get();
     if (!client?.connected) {
-      console.error("Gateway not connected");
+      console.error("Server not connected");
       return;
     }
+
+    const session = sessions[agentId];
+    if (!session) return;
 
     // Add user message immediately
     const userMsg: ChatMessage = {
@@ -148,9 +142,6 @@ export const useDeckStore = create<DeckStore>((set, get) => ({
       text,
       timestamp: Date.now(),
     };
-
-    const session = sessions[agentId];
-    if (!session) return;
 
     set((state) => ({
       sessions: {
@@ -163,197 +154,71 @@ export const useDeckStore = create<DeckStore>((set, get) => ({
       },
     }));
 
-    try {
-      // All columns route through the default "main" agent on the gateway,
-      // using distinct session keys to keep conversations separate.
-      const sessionKey = `agent:main:${agentId}`;
-      const { runId } = await client.runAgent("main", text, sessionKey);
-
-      // Create placeholder assistant message for streaming
-      const assistantMsg: ChatMessage = {
-        id: makeId(),
-        role: "assistant",
-        text: "",
-        timestamp: Date.now(),
-        streaming: true,
-        runId,
-      };
-
-      set((state) => ({
-        sessions: {
-          ...state.sessions,
-          [agentId]: {
-            ...state.sessions[agentId],
-            messages: [...state.sessions[agentId].messages, assistantMsg],
-            activeRunId: runId,
-            status: "streaming",
-          },
-        },
-      }));
-    } catch (err) {
-      console.error(`Failed to run agent ${agentId}:`, err);
-      set((state) => ({
-        sessions: {
-          ...state.sessions,
-          [agentId]: {
-            ...state.sessions[agentId],
-            status: "error",
-          },
-        },
-      }));
-    }
+    // Send to backend — the server will stream events back
+    client.sendMessage(agentId, text);
   },
 
   setAgentStatus: (agentId, status) => {
-    set((state) => ({
-      sessions: {
-        ...state.sessions,
-        [agentId]: {
-          ...state.sessions[agentId],
-          status,
-        },
-      },
-    }));
-  },
-
-  appendMessageChunk: (agentId, runId, chunk) => {
     set((state) => {
       const session = state.sessions[agentId];
-      if (!session || !session.messages) return state;
-
-      const messages = session.messages.map((msg) => {
-        if (msg.runId === runId && msg.streaming) {
-          return { ...msg, text: msg.text + chunk };
-        }
-        return msg;
-      });
-
+      if (!session) return state;
       return {
         sessions: {
           ...state.sessions,
-          [agentId]: {
-            ...session,
-            messages,
-            tokenCount: session.tokenCount + chunk.length, // approximate
-          },
+          [agentId]: { ...session, status },
         },
       };
     });
   },
 
-  finalizeMessage: (agentId, runId) => {
-    set((state) => {
-      const session = state.sessions[agentId];
-      if (!session || !session.messages) return state;
-
-      const messages = session.messages.map((msg) => {
-        if (msg.runId === runId) {
-          return { ...msg, streaming: false };
-        }
-        return msg;
-      });
-
-      return {
-        sessions: {
-          ...state.sessions,
-          [agentId]: {
-            ...session,
-            messages,
-            activeRunId: null,
-            status: "idle",
-          },
-        },
-      };
-    });
-  },
-
-  handleGatewayEvent: (event) => {
-    const payload = event.payload as Record<string, unknown>;
-
-    switch (event.event) {
-      // Agent streaming events
-      // Format: { runId, stream: "assistant"|"lifecycle"|"tool_use", data: {...}, sessionKey: "agent:<id>:<key>" }
-      case "agent": {
-        const runId = payload.runId as string;
-        const stream = payload.stream as string | undefined;
-        const data = payload.data as Record<string, unknown> | undefined;
-        const sessionKey = payload.sessionKey as string | undefined;
-
-        // Extract column ID from sessionKey "agent:main:<columnId>"
-        const parts = sessionKey?.split(":") ?? [];
-        const agentId = parts[2] ?? parts[1] ?? "main";
-
-        if (stream === "assistant" && data?.delta) {
-          get().appendMessageChunk(agentId, runId, data.delta as string);
-          get().setAgentStatus(agentId, "streaming");
-        } else if (stream === "lifecycle") {
-          const phase = data?.phase as string | undefined;
-          if (phase === "start") {
-            get().setAgentStatus(agentId, "thinking");
-          } else if (phase === "end") {
-            get().finalizeMessage(agentId, runId);
-          }
-        } else if (stream === "tool_use") {
-          get().setAgentStatus(agentId, "tool_use");
-        }
+  handleServerFrame: (frame) => {
+    switch (frame.type) {
+      case "connected":
+        // Initial connection ack
         break;
-      }
 
-      // Presence changes (agents coming online/offline)
-      case "presence": {
-        const agents = payload.agents as
-          | Record<string, { online: boolean }>
-          | undefined;
-        if (agents) {
-          set((state) => {
-            const sessions = { ...state.sessions };
-            for (const [id, info] of Object.entries(agents)) {
-              if (sessions[id]) {
-                sessions[id] = {
-                  ...sessions[id],
-                  connected: info.online,
-                  status: info.online ? sessions[id].status : "disconnected",
-                };
-              }
-            }
-            return { sessions };
-          });
-        }
-        break;
-      }
-
-      // Tick events (keep-alive, can update token counts, etc.)
-      case "tick": {
-        // Could update token usage, cost, etc.
-        break;
-      }
-
-      // Context compaction dividers
-      case "compaction": {
-        const sessionKey = payload.sessionKey as string | undefined;
-        const parts = sessionKey?.split(":") ?? [];
-        const agentId = parts[2] ?? parts[1] ?? "main";
-        const beforeTokens = (payload.beforeTokens as number) ?? 0;
-        const afterTokens = (payload.afterTokens as number) ?? 0;
-        const droppedMessages = (payload.droppedMessages as number) ?? 0;
-
-        const compactionMsg: ChatMessage = {
-          id: makeId(),
-          role: "compaction",
-          text: "",
-          timestamp: Date.now(),
-          compaction: { beforeTokens, afterTokens, droppedMessages },
-        };
+      case "status": {
+        const { agentId, runId, status } = frame;
 
         set((state) => {
           const session = state.sessions[agentId];
           if (!session) return state;
+
+          // When agent starts thinking, create a placeholder assistant message
+          if (
+            status === "thinking" &&
+            !session.messages.some(
+              (m) => m.runId === runId && m.role === "assistant"
+            )
+          ) {
+            const assistantMsg: ChatMessage = {
+              id: makeId(),
+              role: "assistant",
+              text: "",
+              timestamp: Date.now(),
+              streaming: true,
+              runId,
+            };
+            return {
+              sessions: {
+                ...state.sessions,
+                [agentId]: {
+                  ...session,
+                  messages: [...session.messages, assistantMsg],
+                  activeRunId: runId,
+                  status,
+                },
+              },
+            };
+          }
+
           return {
             sessions: {
               ...state.sessions,
               [agentId]: {
                 ...session,
-                messages: [...session.messages, compactionMsg],
+                status,
+                activeRunId: status === "idle" ? null : session.activeRunId,
               },
             },
           };
@@ -361,70 +226,169 @@ export const useDeckStore = create<DeckStore>((set, get) => ({
         break;
       }
 
-      // Real usage data from gateway
-      case "sessions.usage": {
-        const sessionKey = payload.sessionKey as string | undefined;
-        const parts = sessionKey?.split(":") ?? [];
-        const agentId = parts[2] ?? parts[1] ?? "main";
-        const usage = payload.usage as SessionUsage | undefined;
+      case "result": {
+        const { agentId, runId, text } = frame;
 
-        if (usage) {
-          set((state) => {
-            const session = state.sessions[agentId];
-            if (!session) return state;
-            return {
-              sessions: {
-                ...state.sessions,
-                [agentId]: {
-                  ...session,
-                  usage,
-                  tokenCount: usage.totalTokens,
-                },
+        set((state) => {
+          const session = state.sessions[agentId];
+          if (!session) return state;
+
+          // Update or create the assistant message with the result
+          const existingIdx = session.messages.findIndex(
+            (m) => m.runId === runId && m.role === "assistant"
+          );
+
+          let messages: ChatMessage[];
+          if (existingIdx >= 0) {
+            messages = session.messages.map((msg) =>
+              msg.runId === runId && msg.role === "assistant"
+                ? { ...msg, text: text || msg.text, streaming: false }
+                : msg
+            );
+          } else {
+            messages = [
+              ...session.messages,
+              {
+                id: makeId(),
+                role: "assistant" as const,
+                text: text || "",
+                timestamp: Date.now(),
+                streaming: false,
+                runId,
               },
-            };
+            ];
+          }
+
+          return {
+            sessions: {
+              ...state.sessions,
+              [agentId]: {
+                ...session,
+                messages,
+                activeRunId: null,
+                status: "idle",
+                tokenCount: session.tokenCount + (text?.length ?? 0),
+              },
+            },
+          };
+        });
+        break;
+      }
+
+      case "chunk": {
+        const { agentId, runId, text } = frame;
+        set((state) => {
+          const session = state.sessions[agentId];
+          if (!session) return state;
+
+          const messages = session.messages.map((msg) => {
+            if (msg.runId === runId && msg.role === "assistant" && msg.streaming) {
+              return { ...msg, text };
+            }
+            return msg;
           });
-        }
+
+          return {
+            sessions: {
+              ...state.sessions,
+              [agentId]: {
+                ...session,
+                messages,
+                tokenCount: session.tokenCount + text.length,
+              },
+            },
+          };
+        });
+        break;
+      }
+
+      case "tool_use": {
+        const { agentId, runId, toolName } = frame;
+        set((state) => {
+          const session = state.sessions[agentId];
+          if (!session) return state;
+
+          const toolMsg: ChatMessage = {
+            id: makeId(),
+            role: "system",
+            text: "",
+            timestamp: Date.now(),
+            toolUse: { name: toolName, status: "running" },
+          };
+
+          return {
+            sessions: {
+              ...state.sessions,
+              [agentId]: {
+                ...session,
+                messages: [...session.messages, toolMsg],
+                status: "tool_use",
+              },
+            },
+          };
+        });
+        break;
+      }
+
+      case "event": {
+        // Forward other SDK events (task_progress, etc.)
+        break;
+      }
+
+      case "session_init": {
+        const { agentId, sessionId } = frame;
+        set((state) => {
+          const session = state.sessions[agentId];
+          if (!session) return state;
+          return {
+            sessions: {
+              ...state.sessions,
+              [agentId]: { ...session, sessionId },
+            },
+          };
+        });
+        break;
+      }
+
+      case "error": {
+        const { agentId, message } = frame;
+        console.error(`[MultiClaude] Agent ${agentId} error:`, message);
+
+        set((state) => {
+          const session = state.sessions[agentId];
+          if (!session) return state;
+
+          // Add error as a system message
+          const errorMsg: ChatMessage = {
+            id: makeId(),
+            role: "system",
+            text: `Error: ${message}`,
+            timestamp: Date.now(),
+          };
+
+          return {
+            sessions: {
+              ...state.sessions,
+              [agentId]: {
+                ...session,
+                messages: [...session.messages, errorMsg],
+                status: "error",
+                activeRunId: null,
+              },
+            },
+          };
+        });
         break;
       }
 
       default:
-        console.log("[DeckStore] Unhandled event:", event.event, payload);
+        break;
     }
-  },
-
-  createAgentOnGateway: async (agent) => {
-    const { client } = get();
-    try {
-      if (client?.connected) {
-        await client.createAgent({
-          id: agent.id,
-          name: agent.name,
-          model: agent.model,
-          context: agent.context,
-          shell: agent.shell,
-        });
-      }
-    } catch (err) {
-      console.warn("[DeckStore] Gateway createAgent failed, adding locally:", err);
-    }
-    get().addAgent(agent);
-  },
-
-  deleteAgentOnGateway: async (agentId) => {
-    const { client } = get();
-    try {
-      if (client?.connected) {
-        await client.deleteAgent(agentId);
-      }
-    } catch (err) {
-      console.warn("[DeckStore] Gateway deleteAgent failed, removing locally:", err);
-    }
-    get().removeAgent(agentId);
   },
 
   disconnect: () => {
     get().client?.disconnect();
-    set({ gatewayConnected: false, client: null });
+    set({ serverConnected: false, client: null });
   },
 
   setTheme: (themeId: string) => {
