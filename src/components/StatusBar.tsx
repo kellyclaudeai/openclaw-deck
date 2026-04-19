@@ -28,7 +28,7 @@ export function StatusBar() {
       </span>
       <span className={styles.sep}>·</span>
       <span>
-        {stats.totalAgents} claws · {stats.active} active
+        {stats.totalAgents} agents · {stats.active} active
         {stats.waitingForUser > 0 && <> · {stats.waitingForUser} waiting</>}
         {stats.errors > 0 && (
           <>
@@ -41,7 +41,7 @@ export function StatusBar() {
         )}
       </span>
       <span className={styles.spacer} />
-      <span>multiclaw v0.1.0</span>
+      <span>multiclaude v0.1.0</span>
     </div>
   );
 }

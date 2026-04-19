@@ -1,7 +1,7 @@
 /**
- * MultiClaw WebSocket Client
+ * MultiClaude WebSocket Client
  *
- * Connects to the MultiClaw backend server and manages
+ * Connects to the MultiClaude backend server and manages
  * communication for multiple Claude Code agent sessions.
  */
 
@@ -10,7 +10,7 @@ import type { ServerFrame, ClientFrame } from "../types";
 type FrameHandler = (frame: ServerFrame) => void;
 type ConnectionHandler = (connected: boolean) => void;
 
-interface MultiClawClientOptions {
+interface MultiClaudeClientOptions {
   url: string;
   onFrame?: FrameHandler;
   onConnection?: ConnectionHandler;
@@ -18,15 +18,15 @@ interface MultiClawClientOptions {
   reconnectBaseDelay?: number;
 }
 
-export class MultiClawClient {
+export class MultiClaudeClient {
   private ws: WebSocket | null = null;
-  private options: Required<MultiClawClientOptions>;
+  private options: Required<MultiClaudeClientOptions>;
   private reconnectAttempts = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private intentionalClose = false;
   private _connected = false;
 
-  constructor(opts: MultiClawClientOptions) {
+  constructor(opts: MultiClaudeClientOptions) {
     this.options = {
       url: opts.url,
       onFrame: opts.onFrame ?? (() => {}),
@@ -65,13 +65,13 @@ export class MultiClawClient {
     try {
       this.ws = new WebSocket(this.options.url);
     } catch (err) {
-      console.error("[MultiClaw] Failed to create WebSocket:", err);
+      console.error("[MultiClaude] Failed to create WebSocket:", err);
       this.scheduleReconnect();
       return;
     }
 
     this.ws.onopen = () => {
-      console.log("[MultiClaw] Connected to server");
+      console.log("[MultiClaude] Connected to server");
       this._connected = true;
       this.reconnectAttempts = 0;
       this.options.onConnection(true);
@@ -82,7 +82,7 @@ export class MultiClawClient {
         const frame: ServerFrame = JSON.parse(evt.data as string);
         this.options.onFrame(frame);
       } catch (err) {
-        console.warn("[MultiClaw] Failed to parse frame:", err);
+        console.warn("[MultiClaude] Failed to parse frame:", err);
       }
     };
 
@@ -93,13 +93,13 @@ export class MultiClawClient {
         this.options.onConnection(false);
       }
       if (!this.intentionalClose) {
-        console.log("[MultiClaw] Connection lost, reconnecting...");
+        console.log("[MultiClaude] Connection lost, reconnecting...");
         this.scheduleReconnect();
       }
     };
 
     this.ws.onerror = (err) => {
-      console.error("[MultiClaw] WebSocket error:", err);
+      console.error("[MultiClaude] WebSocket error:", err);
     };
   }
 
@@ -111,7 +111,7 @@ export class MultiClawClient {
 
   private scheduleReconnect() {
     if (this.reconnectAttempts >= this.options.maxReconnectAttempts) {
-      console.error("[MultiClaw] Max reconnect attempts reached");
+      console.error("[MultiClaude] Max reconnect attempts reached");
       return;
     }
     const delay = Math.min(

@@ -27,7 +27,7 @@ export function TopBar({
       {/* Logo */}
       <div className={styles.logo}>
         <div className={styles.logoIcon}>🐙</div>
-        <span className={styles.logoText}>MultiClaw</span>
+        <span className={styles.logoText}>MultiClaude</span>
         <span className={styles.logoBadge}>DECK</span>
       </div>
 
@@ -89,7 +89,7 @@ export function TopBar({
       <ThemeSwitcher />
 
       <button className={styles.addBtn} onClick={onAddAgent}>
-        <span>+</span> New Claw
+        <span>+</span> New Agent
       </button>
     </div>
   );

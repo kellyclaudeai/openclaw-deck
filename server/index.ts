@@ -1,5 +1,5 @@
 /**
- * MultiClaw Backend Server
+ * MultiClaude Backend Server
  *
  * WebSocket server that manages multiple Claude Code agent sessions.
  * Each agent column in the frontend maps to an independent Agent SDK session.
@@ -20,7 +20,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 
 const PORT = parseInt(process.env.PORT || "3001", 10);
-const CWD = process.env.MULTICLAW_CWD || process.cwd();
+const CWD = process.env.MULTICLAUDE_CWD || process.cwd();
 
 const server = createServer((_req, res) => {
   res.writeHead(200, { "Content-Type": "application/json" });
@@ -39,7 +39,7 @@ function send(ws: WebSocket, data: unknown) {
 }
 
 wss.on("connection", (ws) => {
-  console.log("[MultiClaw] Client connected");
+  console.log("[MultiClaude] Client connected");
   send(ws, { type: "connected" });
 
   ws.on("message", async (raw) => {
@@ -136,7 +136,7 @@ wss.on("connection", (ws) => {
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : "Unknown error";
-        console.error(`[MultiClaw] Agent ${agentId} error:`, message);
+        console.error(`[MultiClaude] Agent ${agentId} error:`, message);
         send(ws, { type: "error", agentId, runId, message });
         send(ws, { type: "status", agentId, runId, status: "error" });
       }
@@ -144,11 +144,11 @@ wss.on("connection", (ws) => {
   });
 
   ws.on("close", () => {
-    console.log("[MultiClaw] Client disconnected");
+    console.log("[MultiClaude] Client disconnected");
   });
 });
 
 server.listen(PORT, () => {
-  console.log(`\n  🐙 MultiClaw server listening on http://localhost:${PORT}`);
+  console.log(`\n  🐙 MultiClaude server listening on http://localhost:${PORT}`);
   console.log(`  📂 Working directory: ${CWD}\n`);
 });

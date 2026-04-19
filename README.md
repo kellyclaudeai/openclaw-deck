@@ -1,55 +1,50 @@
-# MultiClaw Deck 🐙
+# MultiClaude 🐙
 
-A multi-column interface for running multiple [Claude Code](https://docs.anthropic.com/en/docs/claude-code) agent sessions side-by-side. Give each column a different task and watch them all work in parallel.
+**Communicate with many instances of Claude Code on a single adaptive dashboard.**
 
-![MultiClaw Deck](https://img.shields.io/badge/MultiClaw-Deck-blueviolet)
+Run multiple [Claude Code](https://docs.anthropic.com/en/docs/claude-code) agent sessions side-by-side in a multi-column interface. Give each agent a different task and watch them all work on your codebase in parallel.
+
+![MultiClaude](https://img.shields.io/badge/MultiClaude-Deck-blueviolet)
 ![Claude Code](https://img.shields.io/badge/Claude_Code-Agent_SDK-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-## What Is This?
-
-MultiClaw Deck lets you run **5+ Claude Code agents simultaneously**, each in its own column with independent conversation history and full tool access. Think of it as a mission control for AI coding agents.
-
-Each column is a real Claude Code session — agents can read files, write code, run shell commands, search the web, and work on your codebase just like the Claude Code CLI, but you can run many at once.
+---
 
 ## Screenshots
 
-![Theme Example 1](images/theme-1.png)
-*MultiClaw Deck with 5 agent columns running in parallel*
+![MultiClaude Dashboard](images/theme-1.png)
+*Five Claude Code agents running in parallel, each with independent conversations*
 
-![Theme Example 2](images/theme-2.png)
-*Different theme showing markdown rendering and streaming responses*
+![Theme Variants](images/theme-2.png)
+*Full markdown rendering with syntax highlighting across all columns*
 
-![Theme Example 3](images/theme-3.png)
-*Agents using tools and returning results with syntax highlighting*
+![Tool Use](images/theme-3.png)
+*Agents using tools (Read, Edit, Bash, Grep) and streaming results in real-time*
 
-![Theme Example 4](images/theme-4.png)
-*Additional theme showcasing the multi-column layout*
-
-## Features
-
-- **Multi-agent parallelism** — Run 5+ Claude Code sessions simultaneously
-- **Full tool access** — Each agent gets Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch
-- **Session resumption** — Conversations persist across messages (multi-turn)
-- **Real-time streaming** — See agent responses as they come in
-- **Tool use indicators** — Watch agents think, use tools, and produce results
-- **15 dark themes** — Midnight, Dracula, Nord, Monokai, Cyberpunk, and more
-- **Markdown rendering** — Full markdown + syntax highlighting in responses
-- **Keyboard navigation** — Tab between columns, Cmd+1-9 to jump, Cmd+K to add
+![Dark Themes](images/theme-4.png)
+*15 built-in dark themes — Dracula, Nord, Monokai, Cyberpunk, and more*
 
 ---
 
-## Table of Contents
+## What It Does
 
-- [Quick Start](#quick-start)
-- [Agent-Friendly Setup](#agent-friendly-setup)
-- [Architecture](#architecture)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Themes](#themes)
-- [Troubleshooting](#troubleshooting)
-- [Development](#development)
-- [Contributing](#contributing)
+Each column is a **real Claude Code session**. Every agent can:
+
+- Read, write, and edit files in your project
+- Run shell commands
+- Search your codebase (glob, grep)
+- Search the web
+- Maintain full conversation history with session resumption
+
+You control them all from one dashboard. Send 5 different tasks, watch 5 agents work simultaneously.
+
+### Example Use Cases
+
+| Columns | Tasks |
+|---------|-------|
+| 3 agents | "Write tests" / "Add validation" / "Update docs" |
+| 5 agents | Research, implement, review, test, deploy — full pipeline in parallel |
+| 2 agents | One writes code, the other reviews it |
 
 ---
 
@@ -57,186 +52,218 @@ Each column is a real Claude Code session — agents can read files, write code,
 
 ### Prerequisites
 
-- **Node.js v18+** — `node --version`
-- **Claude Code CLI** — `claude --version` (install via `npm install -g @anthropic-ai/claude-code`)
-- **Anthropic API key** — Set as `ANTHROPIC_API_KEY` environment variable
+| Requirement | Check | Install |
+|------------|-------|---------|
+| Node.js 18+ | `node --version` | [nodejs.org](https://nodejs.org/) |
+| Claude Code CLI | `claude --version` | `npm install -g @anthropic-ai/claude-code` |
+| API Key | `echo $ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com/) |
 
 ### Install & Run
 
 ```bash
-# Clone
-git clone https://github.com/kellyclaudeai/openclaw-deck.git
-cd openclaw-deck
-git checkout claude/multiclaw-5IDfY
-
-# Install
+git clone https://github.com/kellyclaudeai/multiclaude.git
+cd multiclaude
 npm install
+```
 
-# Run (two terminals)
-npm run dev:server   # Terminal 1: Backend on port 3001
-npm run dev          # Terminal 2: Frontend on port 5173
+**Start both servers** (recommended):
 
-# Or run both together
+```bash
 npm run dev:all
 ```
 
-Open **http://localhost:5173** — you should see 5 agent columns ready to go.
+Or start them separately:
+
+```bash
+npm run dev:server   # Backend on port 3001
+npm run dev          # Frontend on port 5173
+```
+
+Open **http://localhost:5173** — five agent columns, ready to go.
 
 ---
 
 ## Agent-Friendly Setup
 
-**If you're a Claude Code agent (or any AI agent) helping someone set up MultiClaw, use these exact steps:**
+**Copy-paste setup for Claude Code agents or any AI assistant helping with installation:**
 
 ```bash
 # 1. Verify prerequisites
 node --version    # Must be v18+
-claude --version  # Must be installed
+claude --version  # Must show Claude Code version
 
-# 2. Verify API key is set
-echo $ANTHROPIC_API_KEY | head -c 10  # Should show "sk-ant-..."
+# 2. Verify API key
+test -n "$ANTHROPIC_API_KEY" && echo "API key set" || echo "ERROR: Set ANTHROPIC_API_KEY"
 
 # 3. Clone and install
-git clone https://github.com/kellyclaudeai/openclaw-deck.git
-cd openclaw-deck
-git checkout claude/multiclaw-5IDfY
+git clone https://github.com/kellyclaudeai/multiclaude.git
+cd multiclaude
 npm install
 
-# 4. Start the backend server (port 3001)
+# 4. Start backend (port 3001)
 npx tsx server/index.ts &
+sleep 3
 
-# 5. Start the frontend dev server (port 5173)
+# 5. Start frontend (port 5173)
 npm run dev &
+sleep 3
 
-# 6. Verify
-curl -s http://localhost:3001/ | head   # Should return {"status":"ok",...}
-curl -s http://localhost:5173/ | head   # Should return HTML with <title>MultiClaw Deck</title>
+# 6. Verify both services
+curl -s http://localhost:3001/ | grep -q '"status":"ok"' && echo "Backend: OK" || echo "Backend: FAILED"
+curl -s http://localhost:5173/ | grep -q 'MultiClaude' && echo "Frontend: OK" || echo "Frontend: FAILED"
 
-echo "✓ MultiClaw is running! Open http://localhost:5173 in a browser."
+echo ""
+echo "Open http://localhost:5173 in a browser"
 ```
 
-**Expected result:** Browser shows 5 agent columns with the MultiClaw header. Type a message in any column and press Enter — the agent will think, potentially use tools, and stream back a response.
+### Troubleshooting Quick Reference
 
-**If there are errors:**
-
-| Symptom | Fix |
-|---------|-----|
-| `ANTHROPIC_API_KEY` not set | `export ANTHROPIC_API_KEY=sk-ant-...` |
-| Port 3001 in use | `lsof -ti:3001 \| xargs kill -9` then restart server |
-| Port 5173 in use | `lsof -ti:5173 \| xargs kill -9` then restart frontend |
-| `claude` not found | `npm install -g @anthropic-ai/claude-code` |
-| `tsx` not found | It's a devDependency — use `npx tsx server/index.ts` |
-| Backend starts but agents error | Check `claude -p "hello"` works directly |
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| "process exited with code 1" | API key missing | `export ANTHROPIC_API_KEY=sk-ant-...` |
+| Port 3001 in use | Old server running | `lsof -ti:3001 \| xargs kill -9` |
+| Port 5173 in use | Old frontend running | `lsof -ti:5173 \| xargs kill -9` |
+| `claude` not found | CLI not installed | `npm install -g @anthropic-ai/claude-code` |
+| `tsx` not found | Run via npx | `npx tsx server/index.ts` |
+| Agents error immediately | CLI broken | Test directly: `claude -p "hello"` |
+| Frontend blank page | Deps stale | `rm -rf node_modules && npm install` |
+| "disconnected" in status bar | Backend not running | Start backend first: `npm run dev:server` |
 
 ---
 
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│  Browser (http://localhost:5173)                         │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐       │
-│  │ Claw 1  │ │ Claw 2  │ │ Claw 3  │ │ Claw 4  │ ...   │
-│  │         │ │         │ │         │ │         │       │
-│  │  React  │ │  React  │ │  React  │ │  React  │       │
-│  └────┬────┘ └────┬────┘ └────┬────┘ └────┬────┘       │
-│       └──────┬─────┴──────┬────┘           │            │
-│              ▼            ▼                ▼            │
-│     ┌─────────────────────────────────────────┐         │
-│     │  Zustand Store + MultiClaw WS Client    │         │
-│     └─────────────────┬───────────────────────┘         │
-└───────────────────────┼──────────────────────────────────┘
-                        │ WebSocket (ws://localhost:3001/ws)
-                        ▼
 ┌───────────────────────────────────────────────────────────┐
-│  MultiClaw Backend Server (server/index.ts)               │
+│  Browser — http://localhost:5173                          │
 │                                                           │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐                │
-│  │ Agent    │  │ Agent    │  │ Agent    │  ...            │
-│  │ Session  │  │ Session  │  │ Session  │                │
-│  │ (query)  │  │ (query)  │  │ (query)  │                │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘                │
-│       │              │              │                     │
-│       ▼              ▼              ▼                     │
-│  ┌─────────────────────────────────────────┐              │
-│  │  @anthropic-ai/claude-agent-sdk         │              │
-│  │  query() → Claude Code subprocess       │              │
-│  │  Tools: Read, Write, Edit, Bash,        │              │
-│  │         Glob, Grep, WebSearch, WebFetch  │              │
-│  └─────────────────────────────────────────┘              │
-└───────────────────────────────────────────────────────────┘
-```
-
-### How It Works
-
-1. **Frontend** (React + Zustand + Vite) renders agent columns and connects to the backend via WebSocket
-2. **Backend** (`server/index.ts`) receives messages and spawns independent Claude Code sessions using `query()` from the Agent SDK
-3. **Each column** gets its own `query()` session with full tool access and session resumption for multi-turn conversations
-4. **Streaming** — The backend forwards `assistant` messages, `tool_use` events, and `result` frames back to the frontend in real-time
-
-### WebSocket Protocol
-
-```
-Client → Server:
-  { type: "send", agentId: "claw-1", text: "Explain this codebase" }
-
-Server → Client:
-  { type: "status",       agentId, runId, status: "thinking" }
-  { type: "session_init", agentId, sessionId: "..." }
-  { type: "chunk",        agentId, runId, text: "Here's what..." }
-  { type: "tool_use",     agentId, runId, toolName: "Read" }
-  { type: "result",       agentId, runId, text: "..." }
-  { type: "status",       agentId, runId, status: "idle" }
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐     │
+│  │ Claude 1 │ │ Claude 2 │ │ Claude 3 │ │ Claude 4 │ ... │
+│  │          │ │          │ │          │ │          │     │
+│  │  input   │ │  input   │ │  input   │ │  input   │     │
+│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘     │
+│       └──────┬──────┴──────┬─────┘            │           │
+│              ▼             ▼                   ▼           │
+│     ┌──────────────────────────────────────────────┐      │
+│     │  Zustand Store  ←→  MultiClaude WS Client    │      │
+│     └──────────────────────┬───────────────────────┘      │
+└────────────────────────────┼──────────────────────────────┘
+                             │  WebSocket
+                             ▼
+┌────────────────────────────────────────────────────────────┐
+│  MultiClaude Backend — server/index.ts (port 3001)         │
+│                                                            │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐           │
+│  │  Session 1  │  │  Session 2  │  │  Session 3  │  ...    │
+│  │  query()    │  │  query()    │  │  query()    │         │
+│  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘          │
+│        └───────────┬────┘              │                  │
+│                    ▼                   ▼                  │
+│  ┌──────────────────────────────────────────────────┐     │
+│  │  @anthropic-ai/claude-agent-sdk                  │     │
+│  │                                                  │     │
+│  │  Each session gets:                              │     │
+│  │  • Read, Write, Edit     (file operations)       │     │
+│  │  • Bash                  (shell commands)        │     │
+│  │  • Glob, Grep            (codebase search)       │     │
+│  │  • WebSearch, WebFetch   (web access)            │     │
+│  │  • Session resumption    (multi-turn memory)     │     │
+│  └──────────────────────────────────────────────────┘     │
+└────────────────────────────────────────────────────────────┘
 ```
 
 ### Data Flow
 
 ```
-User types message → Zustand store → MultiClawClient.sendMessage()
-    → WebSocket → Backend → query({ prompt, options: { resume? } })
-    → Claude Code subprocess (with tools)
-    → Streaming events back through WebSocket
-    → Store updates → React re-renders → Markdown display
+You type a message
+  → React component
+    → Zustand store
+      → WebSocket (ws://localhost:3001/ws)
+        → Backend spawns query({ prompt, options })
+          → Claude Code subprocess with full tool access
+            → Streaming events back:
+              status: "thinking"
+              chunk: "Here is my analysis..."
+              tool_use: "Read" / "Edit" / "Bash"
+              result: "Done! Here's what I did..."
+            → WebSocket
+          → Store update
+        → React re-render
+      → Markdown + syntax highlighting
+    → You see the response
+```
+
+### WebSocket Protocol
+
+```
+Client → Server:
+  { type: "send", agentId: "agent-1", text: "Explain this codebase" }
+
+Server → Client:
+  { type: "connected" }
+  { type: "status",       agentId, runId, status: "thinking" | "streaming" | "idle" }
+  { type: "session_init", agentId, sessionId }
+  { type: "chunk",        agentId, runId, text: "partial response..." }
+  { type: "tool_use",     agentId, runId, toolName: "Read" }
+  { type: "result",       agentId, runId, text: "final response" }
+  { type: "error",        agentId, message: "what went wrong" }
 ```
 
 ---
 
-## Usage
+## Features
 
-### Basic Chat
+### Multi-Agent Parallelism
+Run 5+ independent Claude Code sessions simultaneously. Each column has its own conversation, its own session, its own tool access.
 
-1. **Click or Tab** into any column's input field
-2. **Type your message** and press Enter
-3. Watch the agent think, use tools, and stream a response
-4. The conversation persists — send follow-up messages to continue
+### Full Claude Code Tool Access
+Every agent gets the complete Claude Code toolset:
+- **Read / Write / Edit** — Full file system access
+- **Bash** — Shell command execution
+- **Glob / Grep** — Fast codebase search
+- **WebSearch / WebFetch** — Internet access
 
-### Keyboard Shortcuts
+### Session Resumption
+Conversations are multi-turn. Send a follow-up message and the agent picks up right where it left off, with full context from previous turns.
+
+### Real-Time Streaming
+See responses as they arrive:
+- **Thinking indicator** when the agent is reasoning
+- **Tool use badges** when the agent reads files or runs commands
+- **Streaming text** as the response is generated
+- **Final result** rendered with full markdown
+
+### 15 Dark Themes
+
+| Theme | Style |
+|-------|-------|
+| Midnight (default) | Deep blue-black, cyan accents |
+| Ocean Depths | Navy blue, aqua |
+| Forest Night | Dark green, natural |
+| Sunset Glow | Burgundy, orange |
+| Slate Gray | Professional slate |
+| Purple Haze | Deep purple, violet |
+| Cyberpunk | Neon pink + cyan |
+| Rose Garden | Burgundy, rose pink |
+| Abyss | Ultra-dark black |
+| OLED Black | Pure black |
+| Darcula | JetBrains classic |
+| Dracula | Popular palette |
+| Nord | Arctic frost |
+| Gruvbox Dark | Retro groove |
+| Monokai | Classic editor |
+
+Switch instantly via the theme selector in the top bar. Preference persists in localStorage.
+
+### Keyboard Navigation
 
 | Shortcut | Action |
 |----------|--------|
 | `Enter` | Send message |
 | `Shift+Enter` | New line in input |
-| `Tab` | Move to next column |
-| `Shift+Tab` | Move to previous column |
-| `Cmd+1` – `Cmd+9` | Jump to column 1-9 |
-| `Cmd+K` | Open "New Claw" modal |
-
-### Example Workflows
-
-**Parallel research:**
-- Column 1: "Explain the authentication flow in this codebase"
-- Column 2: "Find all API endpoints and list them"
-- Column 3: "What are the main dependencies and their versions?"
-
-**Divide and conquer:**
-- Column 1: "Write unit tests for src/lib/store.ts"
-- Column 2: "Add input validation to the AddAgentModal component"
-- Column 3: "Optimize the AgentColumn rendering performance"
-
-**Review and iterate:**
-- Column 1: "Review this PR for security issues"
-- Column 2: "Check for TypeScript type errors"
-- Column 3: "Suggest refactoring opportunities"
+| `Tab` / `Shift+Tab` | Next / previous column |
+| `Cmd+1` – `Cmd+9` | Jump to column 1–9 |
+| `Cmd+K` | Add new agent column |
 
 ---
 
@@ -246,146 +273,53 @@ User types message → Zustand store → MultiClawClient.sendMessage()
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ANTHROPIC_API_KEY` | (required) | Your Anthropic API key |
+| `ANTHROPIC_API_KEY` | *(required)* | Your Anthropic API key |
 | `PORT` | `3001` | Backend server port |
-| `MULTICLAW_CWD` | `process.cwd()` | Working directory for agents |
+| `MULTICLAUDE_CWD` | `process.cwd()` | Working directory for all agents |
 | `VITE_SERVER_URL` | `ws://127.0.0.1:3001/ws` | Backend WebSocket URL |
+
+### Point Agents at a Different Project
+
+```bash
+MULTICLAUDE_CWD=/path/to/your/project npx tsx server/index.ts
+```
+
+### Change Default Column Count
+
+Edit `src/App.tsx`, line with `buildDefaultAgents(5)` — change `5` to any number.
 
 ### URL Parameters
 
-You can override the server URL via query parameter:
-
+Override the backend URL via query string:
 ```
 http://localhost:5173/?server=ws://other-host:3001/ws
 ```
 
-### Changing Default Column Count
-
-Edit `src/App.tsx`:
-
-```typescript
-const [initialAgents] = useState<AgentConfig[]>(() =>
-  buildDefaultAgents(5)  // Change to any number
-);
-```
-
-### Changing the Working Directory
-
-Agents run in the directory specified by `MULTICLAW_CWD`:
-
-```bash
-MULTICLAW_CWD=/path/to/your/project npx tsx server/index.ts
-```
-
 ---
 
-## Themes
-
-MultiClaw includes **15 dark themes**. Switch instantly via the theme selector (top right).
-
-| Theme | Style |
-|-------|-------|
-| **Midnight** (default) | Deep blue-black with cyan accents |
-| **Ocean Depths** | Navy blue, aqua highlights |
-| **Forest Night** | Dark green, natural tones |
-| **Sunset Glow** | Warm burgundy, orange |
-| **Slate Gray** | Professional slate blue |
-| **Purple Haze** | Deep purple, violet accents |
-| **Cyberpunk** | Neon pink + cyan on dark blue |
-| **Rose Garden** | Burgundy with rose pink |
-| **Abyss** | Ultra-dark (near true black) |
-| **OLED Black** | Pure black for OLED screens |
-| **Darcula** | JetBrains IDE classic |
-| **Dracula** | The popular Dracula palette |
-| **Nord** | Arctic-inspired frost |
-| **Gruvbox Dark** | Retro groove colors |
-| **Monokai** | Classic Monokai editor |
-
-Your theme preference persists in `localStorage` across sessions.
-
----
-
-## Troubleshooting
-
-### "Claude Code process exited with code 1"
-
-The most common error. Usually means:
-
-1. **API key not set:**
-   ```bash
-   export ANTHROPIC_API_KEY=sk-ant-api03-...
-   ```
-
-2. **Claude Code not installed:**
-   ```bash
-   npm install -g @anthropic-ai/claude-code
-   claude --version
-   ```
-
-3. **Test Claude directly:**
-   ```bash
-   claude -p "Say hello" --output-format text
-   ```
-   If this fails, fix the CLI first.
-
-### Backend won't start (port in use)
-
-```bash
-lsof -ti:3001 | xargs kill -9
-npx tsx server/index.ts
-```
-
-### Frontend shows "disconnected"
-
-1. Verify the backend is running: `curl http://localhost:3001/`
-2. Check the Vite proxy config in `vite.config.ts` (should proxy `/ws` to port 3001)
-3. Check browser console for WebSocket errors
-
-### Agent responses are slow
-
-Each agent runs a full Claude Code session. With 5 columns active, you're running 5 concurrent API requests. Consider:
-
-- Reducing column count
-- Using `claude-haiku-4-5` for simpler tasks (edit `src/App.tsx`)
-- Setting `maxTurns` lower in `server/index.ts`
-
-### White screen / blank page
-
-```bash
-rm -rf dist node_modules
-npm install
-npm run dev
-```
-
----
-
-## Development
-
-### Project Structure
+## Project Structure
 
 ```
-multiclaw-deck/
+multiclaude/
 ├── server/
-│   ├── index.ts              # Backend: WebSocket server + Agent SDK
-│   └── tsconfig.json         # Server TypeScript config
+│   ├── index.ts              # Backend: WS server + Claude Agent SDK
+│   └── tsconfig.json
 ├── src/
 │   ├── components/
-│   │   ├── AgentColumn.tsx   # Chat column with messages + input
-│   │   ├── TopBar.tsx        # Header: logo, tabs, stats, theme
-│   │   ├── StatusBar.tsx     # Footer: connection status
-│   │   ├── AddAgentModal.tsx # New agent creation dialog
-│   │   └── ThemeSwitcher.tsx # Theme selector dropdown
+│   │   ├── AgentColumn.tsx   # Chat column (messages + input + status)
+│   │   ├── TopBar.tsx        # Header (logo, tabs, stats, theme)
+│   │   ├── StatusBar.tsx     # Footer (connection status, version)
+│   │   ├── AddAgentModal.tsx # New agent dialog
+│   │   └── ThemeSwitcher.tsx # Theme dropdown
 │   ├── lib/
-│   │   ├── multiclaw-client.ts  # WebSocket client to backend
-│   │   └── store.ts             # Zustand state management
-│   ├── hooks/
-│   │   └── index.ts          # useDeckInit, useAgentSession, etc.
-│   ├── types/
-│   │   └── index.ts          # TypeScript types for protocol + UI
+│   │   ├── multiclaude-client.ts  # WebSocket client
+│   │   └── store.ts               # Zustand state management
+│   ├── hooks/index.ts        # React hooks
+│   ├── types/index.ts        # TypeScript protocol + UI types
 │   ├── themes.ts             # 15 theme definitions
 │   ├── App.tsx               # Root component
 │   ├── App.css               # Global styles
-│   └── main.tsx              # React entry point
+│   └── main.tsx              # Entry point
 ├── package.json
 ├── tsconfig.json
 ├── vite.config.ts
@@ -394,53 +328,24 @@ multiclaw-deck/
 
 ### Scripts
 
-```bash
-npm run dev          # Vite frontend dev server (port 5173)
-npm run dev:server   # Backend server via tsx (port 3001)
-npm run dev:all      # Both servers via concurrently
-npm run build        # Production frontend build → dist/
-npm run preview      # Preview production build
-```
+| Script | What it does |
+|--------|-------------|
+| `npm run dev` | Frontend dev server (port 5173) |
+| `npm run dev:server` | Backend server (port 3001) |
+| `npm run dev:all` | Both servers together |
+| `npm run build` | Production frontend build |
+| `npm run preview` | Preview production build |
 
 ### Tech Stack
 
-| Component | Technology |
-|-----------|-----------|
-| Frontend | React 19, TypeScript, Vite 6 |
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, TypeScript 5.7, Vite 6 |
 | State | Zustand 5 |
-| Backend | Node.js, WebSocket (`ws`) |
-| Agent SDK | `@anthropic-ai/claude-agent-sdk` |
-| Markdown | react-markdown + remark-gfm + rehype-highlight |
-| Dev tools | tsx, concurrently |
-
-### Adding a New Theme
-
-Edit `src/themes.ts` and add an entry:
-
-```typescript
-myTheme: {
-  id: 'myTheme',
-  name: 'My Theme',
-  variant: 'dark',
-  colors: {
-    bg: '#1a1a2e',
-    // ... see existing themes for all required color keys
-  }
-}
-```
-
----
-
-## How It Differs from OpenClaw Deck
-
-| Feature | OpenClaw Deck | MultiClaw Deck |
-|---------|---------------|----------------|
-| Backend | OpenClaw Gateway (external) | Node.js + Claude Agent SDK (local) |
-| Agents | Gateway-routed sessions | Independent Claude Code sessions |
-| Tools | Gateway-provided | Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch |
-| Auth | Ed25519 device identity + tokens | None (local server) |
-| Models | Mixed (GPT, Claude, Gemini) | Claude only (Opus, Sonnet, Haiku) |
-| Protocol | Complex Gateway frame protocol | Simple send/status/chunk/result |
+| Rendering | react-markdown, remark-gfm, rehype-highlight |
+| Backend | Node.js, ws (WebSocket) |
+| Agent SDK | @anthropic-ai/claude-agent-sdk |
+| Dev | tsx, concurrently |
 
 ---
 
@@ -448,19 +353,12 @@ myTheme: {
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Make changes and test
-4. Commit: `git commit -m "Add feature: description"`
-5. Push: `git push origin feature/my-feature`
-6. Open a Pull Request
+3. Make changes and verify: `npx tsc --noEmit && npm run build`
+4. Commit with a clear message
+5. Open a Pull Request
 
 ---
 
 ## License
 
-MIT License — see [LICENSE](LICENSE)
-
-## Acknowledgments
-
-Built on top of [OpenClaw Deck](https://github.com/kellyclaudeai/openclaw-deck) by [@kellyclaudeai](https://github.com/kellyclaudeai).
-
-Powered by [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and the [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-typescript).
+MIT — see [LICENSE](LICENSE)

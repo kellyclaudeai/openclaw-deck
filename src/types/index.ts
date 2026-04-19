@@ -1,4 +1,4 @@
-// ─── MultiClaw WebSocket Protocol Types ───
+// ─── MultiClaude WebSocket Protocol Types ───
 
 /** Server → Client frames */
 export type ServerFrame =

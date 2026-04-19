@@ -7,7 +7,7 @@ import type {
   DeckConfig,
   ServerFrame,
 } from "../types";
-import { MultiClawClient } from "./multiclaw-client";
+import { MultiClaudeClient } from "./multiclaude-client";
 import { themes, applyTheme } from "../themes";
 
 // ─── Default Config ───
@@ -24,7 +24,7 @@ interface DeckStore {
   sessions: Record<string, AgentSession>;
   serverConnected: boolean;
   columnOrder: string[];
-  client: MultiClawClient | null;
+  client: MultiClaudeClient | null;
   theme: string;
 
   // Actions
@@ -76,7 +76,7 @@ export const useDeckStore = create<DeckStore>((set, get) => ({
       columnOrder.push(agent.id);
     }
 
-    const client = new MultiClawClient({
+    const client = new MultiClaudeClient({
       url: config.serverUrl,
       onFrame: (frame) => get().handleServerFrame(frame),
       onConnection: (connected) => {
@@ -352,7 +352,7 @@ export const useDeckStore = create<DeckStore>((set, get) => ({
 
       case "error": {
         const { agentId, message } = frame;
-        console.error(`[MultiClaw] Agent ${agentId} error:`, message);
+        console.error(`[MultiClaude] Agent ${agentId} error:`, message);
 
         set((state) => {
           const session = state.sessions[agentId];

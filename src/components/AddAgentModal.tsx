@@ -43,7 +43,7 @@ export function AddAgentModal({
     setError(null);
     try {
       await onCreate({
-        id: id || `claw-${Date.now()}`,
+        id: id || `agent-${Date.now()}`,
         name: name.trim(),
         icon: icon || name.trim()[0]?.toUpperCase() || "?",
         accent,
@@ -73,7 +73,7 @@ export function AddAgentModal({
       onKeyDown={handleKeyDown}
     >
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.title}>New Claw</div>
+        <div className={styles.title}>New Agent</div>
 
         <div className={styles.row}>
           <div className={styles.field}>
@@ -83,7 +83,7 @@ export function AddAgentModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Research Claw"
+              placeholder="Research Agent"
               autoFocus
             />
           </div>

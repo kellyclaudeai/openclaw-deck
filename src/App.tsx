@@ -26,8 +26,8 @@ const AGENT_ACCENTS = [
 
 function buildDefaultAgents(count: number): AgentConfig[] {
   return Array.from({ length: count }, (_, i) => {
-    const agentId = i === 0 ? "claw-1" : `claw-${i + 1}`;
-    const agentName = i === 0 ? "Claw 1" : `Claw ${i + 1}`;
+    const agentId = i === 0 ? "agent-1" : `agent-${i + 1}`;
+    const agentName = i === 0 ? "Claude 1" : `Claude ${i + 1}`;
 
     return {
       id: agentId,
